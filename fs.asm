@@ -154,6 +154,95 @@ fs_read:
 ; EXP ---------------------------------------------------------------
 
 
+fs_filename_to_tag:
+; IN:  si: pointer to the filename string
+; IN:  di: pointer where the tag will be stored
+;
+; OUT: di: contains the tag
+; OUT: cf: set on error (like unproper filename)
+
+	push si
+	push di
+	push ax
+	push bx
+	push cx
+	push dx
+
+	mov bx, di
+	mov dx, di
+
+	mov al, '.'
+	call string_find_char
+	jnc short .error
+
+	mov cx, di
+	sub cx, si
+
+	mov di, dx
+
+	mov dx, 8
+	sub dx, cx
+
+	cmp cx, 8
+	jg short .error
+
+	rep movsb
+
+	mov al, ' '
+	mov cx, dx
+	rep stosb
+
+	inc si
+
+	call string_length
+	mov cx, ax
+
+	mov dx, 3
+	sub dx, cx
+
+	cmp cx, 3
+	jg short .error
+	cmp cx, 0
+	jle short .error
+
+	rep movsb
+
+	mov al, ' '
+	mov cx, dx
+	rep stosb
+
+	mov di, bx
+.toupper:
+	mov al, byte [di]
+
+	cmp al, 0
+	je short .success
+
+	call string_char_islower
+	jnc short .isupper
+
+	add byte [di], `A`-`a`
+.isupper:
+	inc di
+
+	jmp short .toupper
+
+.error:
+	stc
+	jmp short .return
+
+.success:
+	clc
+.return:
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	pop di
+	pop si
+	ret
+
+
 ; code
 fs_read_root:
 	push ax
@@ -188,6 +277,50 @@ fs_read_fat:
 	pop bx
 	pop ax
 
+	ret
+
+
+fs_tag_to_filename:
+; It is assumed that the tag is correct.
+;
+; IN:  si: pointer to the tag string
+; IN:  di: pointer where the filename will be stored
+;
+; OUT: di: contains the tag
+
+	push si
+	push di
+	push ax
+	push cx
+
+	mov cx, 11
+.loop:
+	cmp cx, 3
+	jne short .skipdot
+
+	mov al, '.'
+	stosb
+.skipdot:
+	lodsb
+
+	cmp al, ` `
+	je short .continue
+
+	call string_char_isupper
+	jnc short .islower
+
+	sub al, `A`-`a`
+.islower:
+	stosb
+.continue:
+	loop .loop
+
+	mov word [di], 0
+
+	pop cx
+	pop ax
+	pop di
+	pop si
 	ret
 
 

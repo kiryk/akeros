@@ -40,10 +40,10 @@ readcmd:
 	mov si, ax
 	je cmd_type
 
-	mov si, os_cmd_echo
+	mov si, os_cmd_test
 	call string_compare
 	mov si, ax
-	je cmd_echo
+	je cmd_test
 
 	mov si, os_cmd_unknown
 	call write_string
@@ -112,22 +112,19 @@ cmd_type:
 	.no_file     db `type: file not found\n`, 0
 	.no_argument db `type: usage: type filename\n`, 0
 
-cmd_echo:
-	call string_split
-	jc short .return
+cmd_test:
+	mov di, .tag
+	call fs_tag_to_filename
 
-	xchg si, di
+	mov si, di
 	call write_string
-
-	xchg si, di
 
 	mov al, `\n`
 	call write_char
 
-	jmp short cmd_echo
-
-.return:
 	jmp readcmd
+
+	.tag times 15 db 0
 
 
 write_char:
@@ -261,7 +258,7 @@ os_fatal_error:
 	os_cmd_unknown db `unknown command\n`, 0
 	os_cmd_ls      db "ls", 0
 	os_cmd_type    db "type", 0
-	os_cmd_echo    db "echo", 0
+	os_cmd_test    db "test", 0
 
 	fat_buffer_uptodate db 0
 

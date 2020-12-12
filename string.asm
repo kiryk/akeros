@@ -140,11 +140,11 @@ string_find_char:
 	push si
 
 .loop:
-	cmp byte [si], 0            ; Is it the end of the string?
-	je short .notfound          ; If so, we found nothing
-
 	cmp byte [si], al           ; Is it the character we want?
 	je short .found             ; If so, note it
+
+	cmp byte [si], 0            ; Is it the end of the string?
+	je short .notfound          ; If so, we found nothing
 
 	inc si                      ; If none of the above,
 	jmp short .loop             ; go for the next character and loop
@@ -160,6 +160,25 @@ string_find_char:
                                     ; before we restore the old si
 	pop si
 	ret
+
+
+string_length:
+; Numbers of characters in a given string, terminating
+; character not included.
+;
+; IN:  si: pointer to a string
+;
+; OUT: ax: length of the string
+
+	push di
+
+	mov al, 0
+	call string_find_char
+
+	mov ax, di
+	sub ax, si
+
+	pop di
 
 
 string_char_isbetween:
@@ -227,6 +246,30 @@ string_char_isdigit:
 	pop bx
 	ret
 
+
+string_char_isalpha:
+; Checks whether a given character is a digit.
+;
+; IN:  al: a character
+;
+; OUT: cf: set if the character is a digit
+
+	push bx
+
+	mov bl, 'a'                 ; Is it between 'a' and 'z'
+	mov bh, 'z'                 ; or is it one of these?
+	call string_char_isbetween  ; If so, return and
+	jc .return                  ; the carry will remain set
+
+	mov bl, 'A'                 ; Is it between 'A' and 'Z'
+	mov bh, 'Z'                 ; or is it one of these?
+	call string_char_isbetween  ; If so, return and
+	jc .return                  ; the carry will remain set
+.return:
+	pop bx                      ; If both test failed, the carry
+	ret                         ; will be cleared
+
+
 string_char_islower:
 ; Checks whether a given character is lowercase.
 ;
@@ -237,9 +280,27 @@ string_char_islower:
 	push bx
 
 	mov bl, 'a'                 ; Is it between 'a' and 'z'
-	mov bh, 'z'                 ; or one of these?
+	mov bh, 'z'                 ; or is it one of these?
 
 	call string_char_isbetween  ; If so, it's lowercase and cf is set
+                                    ; by string_char_isbetween
+	pop bx
+	ret
+
+
+string_char_isupper:
+; Checks whether a given character is uppercase.
+;
+; IN:  al: a character
+;
+; OUT: cf: set if the character is uppercase
+
+	push bx
+
+	mov bl, 'A'                 ; Is it between 'A' and 'Z'
+	mov bh, 'Z'                 ; or is it one of these?
+
+	call string_char_isbetween  ; If so, it's uppercase and cf is set
                                     ; by string_char_isbetween
 	pop bx
 	ret
