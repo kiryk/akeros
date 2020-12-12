@@ -385,6 +385,7 @@ fs_next_file:
 
 	ret
 
+
 fs_find_file:
 ; IN:  si: filename pointer
 ; IN:      root directory in buffer
