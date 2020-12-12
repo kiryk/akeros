@@ -61,23 +61,31 @@ cmd_ls:
 	cmp byte [si], 0E5h
 	je short .skip
 
-	mov cx, fs_dir_entry.namesize
-	call write_limited_string
+	mov di, .filename
+	call fs_tag_to_filename
+
+	xchg si, di
+	call write_string
 
 	mov al, `\n`
 	call write_char
 .skip:
+	mov si, di
 	call fs_next_file
 
 	loop .loop
 	jmp short readcmd
+
+	.filename times 13 db 0
 
 
 cmd_type:
 	call string_split
 	jc short .no_argument_error
 
-	mov si, di
+	;mov si, di
+	call write_string
+
 	call fs_open_file
 	jc short .no_file_error
 

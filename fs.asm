@@ -394,16 +394,20 @@ fs_find_file:
 ; OUT: di: entry pointer
 ; OUT: cf: set on file not found
 
-;;	push es
+	.filename equ 0
+
 	push bx
 	push cx
 	push dx
-	push si ; must be pushed as last
+	push si
 
-	clc
+	sub sp, fs_dir_entry.namesize+2
 
-;;	mov bx, ds
-;;	mov es, bx
+	mov di, sp+.filename
+	call fs_filename_to_tag
+	jc .notfound
+
+	mov si, sp+.filename
 
 	mov cx, [MaxRootEntries]
 	mov ax, buffer
@@ -413,34 +417,37 @@ fs_find_file:
 
 	cmp byte [di], 0
 	je .notfound
+
 	cmp byte [di], 0E5h
 	je .continue
 
-	xchg cx, dx
+	mov dx, cx
 	mov cx, fs_dir_entry.namesize
 	rep cmpsb
+	mov si, sp+.filename
 	je .found
-	xchg cx, dx
+	mov cx, dx
 .continue:
-	pop si  ; si has been deliberately left on
-	push si ; top of the stack, for convinience
 
 	add ax, fs_dir_entry.size
 	loop .loop
 .notfound:
 	stc
 	jmp short .return
+
 .found:
 	mov di, ax
 	mov ax, [di+fs_dir_entry.cluster]
 	add ax, 31
 
+	clc
 .return:
+	add sp, fs_dir_entry.namesize+2
+
 	pop si
 	pop dx
 	pop cx
 	pop bx
-;;	pop es
 
 	ret
 
