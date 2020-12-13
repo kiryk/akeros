@@ -27,7 +27,7 @@ readcmd:
 	call read_string
 
 	mov si, di
-	call string_split
+	call string_parse
 	mov ax, si
 
 	mov si, os_cmd_ls
@@ -80,11 +80,8 @@ cmd_ls:
 
 
 cmd_type:
-	call string_split
+	call string_parse
 	jc short .no_argument_error
-
-	;mov si, di
-	call write_string
 
 	call fs_open_file
 	jc short .no_file_error
@@ -119,6 +116,7 @@ cmd_type:
 
 	.no_file     db `type: file not found\n`, 0
 	.no_argument db `type: usage: type filename\n`, 0
+
 
 cmd_test:
 	mov di, .tag
@@ -255,7 +253,7 @@ os_fatal_error:
 	call write_string
 	jmp $
 
-.error db `kernel fatal error, halting.\n`, 0
+	.error db `kernel fatal error, halting.\n`, 0
 
 
 ; variables

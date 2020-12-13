@@ -28,7 +28,7 @@ string_compare:
 	ret
 
 
-string_split:
+string_parse:
 ; Finds the first word in a given string and null-terminates it,
 ; pointer to the rest of the string is preserved.
 ;

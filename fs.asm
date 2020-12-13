@@ -62,6 +62,7 @@ fs_open_file:
 
 	ret
 
+
 fs_read:
 ;; IN: ax: file descriptor
 ; IN: di: buffer to load the data to
@@ -394,18 +395,18 @@ fs_find_file:
 ; OUT: di: entry pointer
 ; OUT: cf: set on file not found
 
+	.size     equ 13
 	.filename equ 0
 
 	push bx
 	push cx
 	push dx
 	push si
-
-	sub sp, fs_dir_entry.namesize+2
+	sub sp, .size
 
 	mov di, sp+.filename
 	call fs_filename_to_tag
-	jc .notfound
+	jc short .notfound
 
 	mov si, sp+.filename
 
@@ -416,22 +417,24 @@ fs_find_file:
 	mov di, ax
 
 	cmp byte [di], 0
-	je .notfound
+	je short .notfound
 
 	cmp byte [di], 0E5h
-	je .continue
+	je short .continue
 
 	mov dx, cx
 	mov cx, fs_dir_entry.namesize
-	rep cmpsb
+	repe cmpsb
+	je short .found
 	mov si, sp+.filename
-	je .found
 	mov cx, dx
 .continue:
 
 	add ax, fs_dir_entry.size
 	loop .loop
+
 .notfound:
+	add sp, .size
 	stc
 	jmp short .return
 
@@ -440,10 +443,11 @@ fs_find_file:
 	mov ax, [di+fs_dir_entry.cluster]
 	add ax, 31
 
+	add sp, .size
 	clc
-.return:
-	add sp, fs_dir_entry.namesize+2
+	jmp short .return
 
+.return:
 	pop si
 	pop dx
 	pop cx
