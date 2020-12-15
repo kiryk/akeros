@@ -82,7 +82,6 @@ cmd_ls:
 cmd_type:
 	call string_parse
 	jc short .no_argument_error
-	mov si, di
 
 	call fs_open_file
 	jc short .no_file_error

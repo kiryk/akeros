@@ -13,7 +13,9 @@
 ; structures
 fs_dir_entry:
 	.size     equ 32
-	.namesize equ 11
+	.basesize equ 8
+	.extsize  equ 3
+	.namesize equ .basesize + .extsize
 
 	.name     equ 0
 	.ext      equ 8
@@ -23,10 +25,10 @@ fs_dir_entry:
 fs_file_buffer:
 	.size   equ BytesPerSector + 2 + 2 + 2
 
-	.buffer equ BytesPerSector
-	.sector equ 512
-	.offset equ 514
-	.left   equ 516
+	.buffer equ 0
+	.sector equ BytesPerSector
+	.offset equ BytesPerSector + 2
+	.left   equ BytesPerSector + 4
 
 ; EXP -- this might end up in io_ -----------------------------------
 fs_buffer: times fs_file_buffer.size db 0
@@ -91,7 +93,7 @@ fs_read:
 	cmp word [fs_buffer+fs_file_buffer.left], 0
 	je short .error
 
-	cmp word [fs_buffer+fs_file_buffer.offset], 512
+	cmp word [fs_buffer+fs_file_buffer.offset], BytesPerSector
 	jge short .next_sector
 .nexted:
 	cmp word [fs_buffer+fs_file_buffer.offset], 0
@@ -183,10 +185,10 @@ fs_filename_to_tag:
 
 	mov di, dx
 
-	mov dx, 8
+	mov dx, fs_dir_entry.basesize
 	sub dx, cx
 
-	cmp cx, 8
+	cmp cx, fs_dir_entry.basesize
 	jg short .error
 
 	rep movsb
@@ -200,10 +202,10 @@ fs_filename_to_tag:
 	call string_length
 	mov cx, ax
 
-	mov dx, 3
+	mov dx, fs_dir_entry.extsize
 	sub dx, cx
 
-	cmp cx, 3
+	cmp cx, fs_dir_entry.extsize
 	jg short .error
 	cmp cx, 0
 	jle short .error
@@ -296,9 +298,9 @@ fs_tag_to_filename:
 	push ax
 	push cx
 
-	mov cx, 11
+	mov cx, fs_dir_entry.namesize
 .loop:
-	cmp cx, 3
+	cmp cx, fs_dir_entry.extsize
 	jne short .skipdot
 
 	mov al, '.'
@@ -370,7 +372,7 @@ fs_read_file:
 	call fs_get_next_sector
 	jc short .return
 
-	add bx, 512
+	add bx, BytesPerSector
 	jmp short .loop
 
 .return:
@@ -397,7 +399,7 @@ fs_find_file:
 ; OUT: di: entry pointer
 ; OUT: cf: set on file not found
 
-	.size     equ 13
+	.size     equ fs_dir_entry.namesize+2
 	.filename equ 0
 
 	push bx
