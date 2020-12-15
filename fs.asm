@@ -4,6 +4,8 @@
 	FirstRootSector   equ 19
 	RootSectors       equ 14
 
+	BytesPerSector    equ 512
+
 	MaxRootEntries    dw 224
 	SectorsPerTrack   dw 18
 	Heads             dw 2
@@ -19,9 +21,9 @@ fs_dir_entry:
 	.length   equ 28
 
 fs_file_buffer:
-	.size   equ 512 + 2 + 2 + 2
+	.size   equ BytesPerSector + 2 + 2 + 2
 
-	.buffer equ 0
+	.buffer equ BytesPerSector
 	.sector equ 512
 	.offset equ 514
 	.left   equ 516
@@ -404,11 +406,11 @@ fs_find_file:
 	push si
 	sub sp, .size
 
-	mov di, sp+.filename
+	mov di, sp
 	call fs_filename_to_tag
 	jc short .notfound
 
-	mov si, sp+.filename
+	mov si, sp
 
 	mov cx, [MaxRootEntries]
 	mov ax, buffer
@@ -426,7 +428,7 @@ fs_find_file:
 	mov cx, fs_dir_entry.namesize
 	repe cmpsb
 	je short .found
-	mov si, sp+.filename
+	mov si, sp
 	mov cx, dx
 .continue:
 

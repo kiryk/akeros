@@ -278,8 +278,8 @@ fatal_error:
 	newline   db 13, 10, 0
 	device    db 0
 
-	still db "o", 0
-	done  db "k", 13, 10, 0
+	still db ".", 0
+	done  db " ok", 13, 10, 0
 
 ; bootloader padding and sigature
 	times 510-($-$$) db 0
