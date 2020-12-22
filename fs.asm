@@ -1,4 +1,6 @@
 ; constants
+	MaxOpenFiles      equ 5
+
 	FirstFATSector    equ 1
 	FATSectors        equ 9
 	FirstRootSector   equ 19
@@ -31,7 +33,7 @@ fs_file_buffer:
 	.left   equ BytesPerSector + 4
 
 ; EXP -- this might end up in io_ -----------------------------------
-fs_buffer: times fs_file_buffer.size db 0
+fs_buffer: times MaxOpenFiles times fs_file_buffer.size db 0
 
 fs_open_file:
 ; IN: si: filename pointer
