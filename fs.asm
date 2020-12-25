@@ -21,16 +21,24 @@ fs_dir_entry:
 
 	.name     equ 0
 	.ext      equ 8
+	.attribs  equ 11
+	.reserved equ 12
+	.cr_time  equ 14
+	.cr_date  equ 16
+	.rd_date  equ 18
+	.wr_time  equ 20
+	.wr_date  equ 22
 	.cluster  equ 26
 	.length   equ 28
 
 fs_file_buffer:
-	.size   equ BytesPerSector + 2 + 2 + 2
+	.size   equ BytesPerSector + 2 + 2 + 2 + 1
 
 	.buffer equ 0
 	.sector equ BytesPerSector
 	.offset equ BytesPerSector + 2
 	.left   equ BytesPerSector + 4
+	.isopen equ BytesPerSector + 6 ; !!!
 
 ; EXP -- this might end up in io_ -----------------------------------
 fs_buffer: times MaxOpenFiles times fs_file_buffer.size db 0
@@ -157,6 +165,7 @@ fs_read:
 	pop di
 
 	ret
+
 
 ; EXP ---------------------------------------------------------------
 
