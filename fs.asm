@@ -341,26 +341,6 @@ fs_tag_to_filename:
 	ret
 
 
-fs_read_file_by_name:
-; IN:  si: filename pointer
-; IN:  bx: buffer to load the file to
-;
-; OUT:     the buffer under bx contains the file
-; OUT:     updated FAT buffer
-; OUT: cf: set on error
-
-	pusha
-
-	call fs_read_root
-	call fs_find_file
-	jc short .return
-
-	call fs_read_file
-.return:
-	popa
-	ret
-
-
 fs_read_file:
 ; IN:  ax: first logical sector
 ; IN:  bx: buffer to load the file to
