@@ -40,6 +40,7 @@ fs_file_buffer:
 	.left   equ BytesPerSector + 4
 	.isopen equ BytesPerSector + 6 ; !!!
 
+
 ; EXP -- this might end up in io_ -----------------------------------
 fs_buffer: times MaxOpenFiles times fs_file_buffer.size db 0
 
@@ -529,6 +530,7 @@ fs_get_next_sector:
 
 	ret
 
+
 fs_read_sectors:
 ; IN: ax: logical sector
 ; IN: bx: destination
@@ -541,6 +543,31 @@ fs_read_sectors:
 	pop ax
 
 	mov ah, 2h
+.try:
+	stc
+	int 13h
+	jnc .continue ; no need to retry
+
+	call fd_reset_disk
+	jc os_fatal_error
+	jmp .try
+.continue:
+	popa
+	ret
+
+
+fs_write_sectors:
+; IN: ax: logical sector
+; IN: bx: source
+; IN: cl: sector count
+
+	pusha
+
+	push cx
+	call fs_ltolhs
+	pop ax
+
+	mov ah, 3h
 .try:
 	stc
 	int 13h
