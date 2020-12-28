@@ -267,7 +267,7 @@ fs_read_root:
 	push cx
 
 	mov ax, FirstRootSector
-	mov bx, buffer
+	mov bx, root_buffer
 	mov cl, RootSectors
 	call fs_read_sectors
 
@@ -407,7 +407,7 @@ fs_find_file:
 	mov si, sp
 
 	mov cx, [MaxRootEntries]
-	mov ax, buffer
+	mov ax, root_buffer
 
 .loop:
 	mov di, ax

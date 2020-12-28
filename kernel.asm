@@ -53,7 +53,7 @@ readcmd:
 cmd_ls:
 	call fs_read_root
 
-	mov si, buffer
+	mov si, root_buffer
 	mov cx, MaxRootEntries
 .loop:
 	cmp byte [si], 000h
@@ -86,8 +86,8 @@ cmd_type:
 	call fs_open_file
 	jc short .no_file_error
 
-	mov di, buffer
-	mov si, buffer
+	mov di, root_buffer
+	mov si, root_buffer
 .loop:
 	mov cx, 128
 	call fs_read
@@ -276,4 +276,4 @@ os_fatal_error:
 ; INCLUDE "mem.asm"
 
 fat_buffer:
-buffer equ fat_buffer+4608 ; 9*512 (size of FAT in the buffer)
+root_buffer equ fat_buffer+4608 ; 9*512 (size of FAT in the buffer)
