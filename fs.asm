@@ -55,7 +55,6 @@ fs_open_file:
 	push ax
 	push bx
 
-	call fs_read_root
 	call fs_find_file
 	jc short .error
 
@@ -176,7 +175,7 @@ fs_filename_to_tag:
 ; IN:  di: pointer where the tag will be stored
 ;
 ; OUT: di: contains the tag
-; OUT: cf: set on error (like unproper filename)
+; OUT: cf: set on error (like an unproper filename)
 
 	push si
 	push di
@@ -278,6 +277,23 @@ fs_read_root:
 	ret
 
 
+fs_write_root:
+	push ax
+	push bx
+	push cx
+
+	mov ax, FirstRootSector
+	mov bx, root_buffer
+	mov cl, RootSectors
+	call fs_write_sectors
+
+	pop cx
+	pop bx
+	pop ax
+
+	ret
+
+
 fs_read_fat:
 	push ax
 	push bx
@@ -287,8 +303,6 @@ fs_read_fat:
 	mov bx, fat_buffer
 	mov cl, FATSectors
 	call fs_read_sectors
-
-	mov [fat_buffer_uptodate], byte 1
 
 	pop cx
 	pop bx
@@ -332,7 +346,7 @@ fs_tag_to_filename:
 .continue:
 	loop .loop
 
-	mov word [di], 0
+	mov byte [di], 0
 
 	pop cx
 	pop ax
@@ -341,20 +355,85 @@ fs_tag_to_filename:
 	ret
 
 
+fs_create_file:
+; IN:    si: pointer to the filename
+; IN:        root directory in buffer
+;
+; OUT: di: entry pointer
+; OUT: cf: set if could not create
+
+	.size     equ fs_dir_entry.namesize+2
+	.filename equ 0
+
+	push ax
+	push bx
+	push cx
+	push si
+	sub sp, .size
+
+	call fs_find_file
+	jnc short .error
+
+	mov di, sp
+	call fs_filename_to_tag
+	jc short .error
+
+	mov cx, [MaxRootEntries]
+	mov bx, root_buffer
+.loop:
+	cmp byte [bx], 0
+	je short .create
+
+	cmp byte [bx], 0E5h
+	je short .create ; found!
+
+	add bx, fs_dir_entry.size
+	loop .loop
+.error:
+	add sp, .size
+	stc
+	jmp short .return
+
+.create:
+	mov cx, fs_dir_entry.namesize
+	mov si, di
+	mov di, bx
+	add di, fs_dir_entry.name
+	rep movsb
+
+	mov byte [bx+fs_dir_entry.attribs],  0
+	mov word [bx+fs_dir_entry.reserved], 0
+	mov word [bx+fs_dir_entry.cr_time],  0
+	mov word [bx+fs_dir_entry.cr_date],  0
+	mov word [bx+fs_dir_entry.rd_date],  0
+	mov word [bx+fs_dir_entry.wr_time],  0
+	mov word [bx+fs_dir_entry.wr_date],  0
+	mov word [bx+fs_dir_entry.cluster],  0
+	mov word [bx+fs_dir_entry.length],   0
+
+	mov di, bx
+
+	call fs_write_root
+
+	add sp, .size
+	clc
+.return:
+	pop si
+	pop cx
+	pop bx
+	pop ax
+
+	ret
+
+
 fs_read_file:
-; IN:  ax: first logical sector
+; IN:  ax: first physical sector
 ; IN:  bx: buffer to load the file to
 ; OUT:     the buffer under bx contains the file
 ; OUT:     updated FAT buffer
 
 	pusha
 
-	cmp [fat_buffer_uptodate], byte 1
-	je short .fine
-
-	call fs_read_fat
-
-.fine:
 	mov cl, 1
 
 .loop:
@@ -387,7 +466,7 @@ fs_find_file:
 ; IN:  si: filename pointer
 ; IN:      root directory in buffer
 ;
-; OUT: ax: file's first logical sector
+; OUT: ax: file's first physical sector
 ; OUT: di: entry pointer
 ; OUT: cf: set on file not found
 
@@ -453,10 +532,10 @@ fs_find_file:
 
 
 fs_get_next_sector:
-; IN:  ax: current logical sector
+; IN:  ax: current physical sector
 ; IN:      FAT table in the buffer
 ;
-; OUT: ax: next logical sector
+; OUT: ax: next physical sector
 ; OUT: cf: set if no next sector
 
 	push bx
@@ -464,12 +543,6 @@ fs_get_next_sector:
 	push dx
 	push si
 
-	cmp [fat_buffer_uptodate], byte 1
-	je short .fine
-
-	call fs_read_fat
-
-.fine:
 	sub ax, 31
 	mov bx, ax
 
@@ -512,7 +585,7 @@ fs_get_next_sector:
 
 
 fs_read_sectors:
-; IN: ax: logical sector
+; IN: ax: physical sector
 ; IN: bx: destination
 ; IN: cl: sector count
 
@@ -537,7 +610,7 @@ fs_read_sectors:
 
 
 fs_write_sectors:
-; IN: ax: logical sector
+; IN: ax: physical sector
 ; IN: bx: source
 ; IN: cl: sector count
 
@@ -562,7 +635,7 @@ fs_write_sectors:
 
 
 fs_ltolhs:
-	; IN:  ax:     logical sector
+	; IN:  ax:     physical sector
 	; OUT: cx, dx: parameters to int 13h
 
 	push ax

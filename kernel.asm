@@ -45,6 +45,11 @@ readcmd:
 	mov si, ax
 	je cmd_test
 
+	mov si, os_cmd_mk
+	call string_compare
+	mov si, ax
+	je cmd_mk
+
 	mov si, os_cmd_unknown
 	call write_string
 
@@ -81,15 +86,16 @@ cmd_ls:
 
 cmd_type:
 	call string_parse
-	jc short .no_argument_error
+	jc .no_argument_error
+	mov si, di
 
 	call fs_open_file
 	jc short .no_file_error
 
-	mov di, root_buffer
-	mov si, root_buffer
+	mov di, .buffer
+	mov si, .buffer
 .loop:
-	mov cx, 128
+	mov cx, 32
 	call fs_read
 	jc short .last
 
@@ -116,6 +122,33 @@ cmd_type:
 
 	.no_file     db `type: file not found\n`, 0
 	.no_argument db `type: usage: type filename\n`, 0
+	.buffer      times 32 db 0
+
+
+cmd_mk:
+	call string_parse
+	jc .no_argument_error
+	mov si, di
+
+	call fs_create_file
+	jc short .cant_make_error
+
+	jmp readcmd
+
+.cant_make_error:
+	mov si, .cant_make
+	call write_string
+
+	jmp readcmd
+
+.no_argument_error:
+	mov si, .no_argument
+	call write_string
+
+	jmp readcmd
+
+	.cant_make   db `mk: could not create\n`, 0
+	.no_argument db `mk: usage: mk filename\n`, 0
 
 
 cmd_test:
@@ -265,6 +298,7 @@ os_fatal_error:
 	os_cmd_ls      db "ls", 0
 	os_cmd_type    db "type", 0
 	os_cmd_test    db "test", 0
+	os_cmd_mk      db "mk", 0
 
 	fat_buffer_uptodate db 0
 
@@ -276,4 +310,4 @@ os_fatal_error:
 ; INCLUDE "mem.asm"
 
 fat_buffer:
-root_buffer equ fat_buffer+4608 ; 9*512 (size of FAT in the buffer)
+root_buffer equ fat_buffer+9*512 ; (size of FAT in the buffer)
