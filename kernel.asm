@@ -19,6 +19,10 @@ os_start:
 
 	mov [fs_device], al
 
+init:
+	call fs_read_fat
+	call fs_read_root
+
 readcmd:
 	mov si, os_prompt
 	call write_string
