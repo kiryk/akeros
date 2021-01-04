@@ -361,6 +361,7 @@ fs_create_file:
 ;
 ; OUT: di: entry pointer
 ; OUT: cf: set if could not create
+; OUT:     changes written to the disk
 
 	.size     equ fs_dir_entry.namesize+2
 	.filename equ 0
