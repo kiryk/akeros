@@ -531,6 +531,51 @@ fs_find_file:
 	ret
 
 
+fs_set_fat_entry:
+; IN:  ax: FAT entry number
+; IN:  bx: the value
+;
+; OUT: FAT entry number ax contains value of bx
+
+	push ax
+	push bx
+	push cx
+	push dx
+	push si
+
+	mov dx, 0
+	mov cx, 3
+	mul cx
+
+	mov cx, 2
+	div cx
+
+	mov si, fat_buffer
+	add si, ax
+	mov ax, word [si]
+
+	cmp dx, 0
+	je short .even_record
+.odd_record:
+	and ax, 0000Fh
+	shl bx, 4
+	jmp short .insert
+
+.even_record:
+	and ax, 0F000h
+.insert:
+	or ax, bx
+	mov word [si], ax
+
+	pop si
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+
+	ret
+
+
 fs_get_next_sector:
 ; IN:  ax: current physical sector
 ; IN:      FAT table in the buffer
