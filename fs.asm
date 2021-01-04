@@ -311,6 +311,23 @@ fs_read_fat:
 	ret
 
 
+fs_write_fat:
+	push ax
+	push bx
+	push cx
+
+	mov ax, FirstFATSector
+	mov bx, fat_buffer
+	mov cl, FATSectors
+	call fs_write_sectors
+
+	pop cx
+	pop bx
+	pop ax
+
+	ret
+
+
 fs_tag_to_filename:
 ; It is assumed that the tag is correct.
 ;
