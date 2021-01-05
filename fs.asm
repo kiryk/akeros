@@ -10,6 +10,10 @@
 
 	BytesPerSector    equ 512
 
+	Sectors           equ 2880
+	DataSectors       equ Sectors - 33 ; total - predefined
+	FirstDataSector   equ 33
+
 	MaxRootEntries    dw 224
 	SectorsPerTrack   dw 18
 	Heads             dw 2
