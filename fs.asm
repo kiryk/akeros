@@ -558,6 +558,65 @@ fs_find_file:
 	ret
 
 
+fs_find_free_sector:
+; IN:  ax: physical sector for which we search
+;
+; OUT: ax: free physical sector number
+; OUT: cf: on error or no free sector found
+
+	push bx
+	push cx
+	push dx
+	push si
+
+	mov bx, ax
+
+	mov cx, Sectors
+	sub cx, bx
+
+	jmp short .continue_after
+
+.loop_after:
+	mov dx, ax
+	call fs_get_next_sector
+	xchg ax, dx
+
+	jnc short .continue_after
+
+	cmp dx, 0
+	je short .found
+.continue_after:
+	inc ax
+	loop .loop_after
+
+	mov ax, FirstDataSector
+	mov cx, bx
+	sub cx, FirstDataSector
+.loop_before:
+	mov dx, ax
+	call fs_get_next_sector
+	xchg ax, dx
+
+	jnc short .continue_before
+
+	cmp dx, 0
+	je short .found
+.continue_before:
+	inc ax
+	loop .loop_before
+.error:
+	stc
+	jmp short .return
+
+.found:
+	clc
+.return:
+	pop si
+	pop dx
+	pop cx
+	pop bx
+
+
 fs_set_next_sector:
 ; IN:  ax: physical sector
 ; IN:  bx: next physical sector
