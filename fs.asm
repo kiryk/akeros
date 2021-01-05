@@ -549,17 +549,20 @@ fs_find_file:
 	ret
 
 
-fs_set_fat_entry:
-; IN:  ax: FAT entry number
-; IN:  bx: the value
+fs_set_next_sector:
+; IN:  ax: physical sector
+; IN:  bx: next physical sector
 ;
-; OUT: FAT entry number ax contains value of bx
+; OUT: sector ax is attached bx as its next sector
+;      in the FAT table
 
 	push ax
 	push bx
 	push cx
 	push dx
 	push si
+
+	sub ax, 31
 
 	mov dx, 0
 	mov cx, 3
