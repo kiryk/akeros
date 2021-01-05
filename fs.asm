@@ -6,6 +6,8 @@
 	FirstRootSector   equ 19
 	RootSectors       equ 14
 
+	SecondFATSector   equ FirstFATSector + FATSectors
+
 	BytesPerSector    equ 512
 
 	MaxRootEntries    dw 224
@@ -319,6 +321,9 @@ fs_write_fat:
 	mov ax, FirstFATSector
 	mov bx, fat_buffer
 	mov cl, FATSectors
+	call fs_write_sectors
+
+	mov ax, SecondFATSector
 	call fs_write_sectors
 
 	pop cx
