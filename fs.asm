@@ -645,13 +645,14 @@ fs_get_next_sector:
 	cmp ax, 0001
 	jle short .nonext
 
+	add ax, 31
+
 	clc
 	jmp short .return
+
 .nonext:
 	stc
 .return:
-	add ax, 31
-
 	pop si
 	pop dx
 	pop cx
