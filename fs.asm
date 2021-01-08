@@ -38,18 +38,20 @@ fs_dir_entry:
 	.length   equ 28
 
 fs_file_buffer:
-	.size   equ BytesPerSector + 2 + 2 + 2 + 1
+	.size   equ BytesPerSector + 2 + 2 + 2 + 2 + 2 + 1
 
 	.buffer equ 0
 	.sector equ BytesPerSector
 	.offset equ BytesPerSector + 2
 	.left   equ BytesPerSector + 4
-	.isopen equ BytesPerSector + 6 ; !!!
-
+	.pos    equ BytesPerSector + 6
+	.dirent equ BytesPerSector + 8
+	.isopen equ BytesPerSector + 10 ; yet unused!!!
 
 ; EXP -- this might end up in io_ -----------------------------------
 fs_buffer: times MaxOpenFiles times fs_file_buffer.size db 0
 
+; !!! są różne stany odczytu tego samegu pliku, ale stan zapisu jest tylko jeden
 fs_open_file:
 ; IN: si: filename pointer
 ;
@@ -67,8 +69,11 @@ fs_open_file:
 	mov word [fs_buffer+fs_file_buffer.sector], ax
 	mov word [fs_buffer+fs_file_buffer.offset], 0
 
-	mov bx, [di+fs_dir_entry.length]
-	mov word [fs_buffer+fs_file_buffer.left], bx
+	mov word [fs_buffer+fs_file_buffer.pos], 0
+	mov word [fs_buffer+fs_file_buffer.dirent], di
+
+;	mov bx, [di+fs_dir_entry.length]
+;	mov word [fs_buffer+fs_file_buffer.left], bx
 .success:
 	clc
 	jmp short .return
@@ -83,6 +88,97 @@ fs_open_file:
 	ret
 
 
+;fs_read:
+;;; IN: ax: file descriptor
+;; IN: di: buffer to load the data to
+;; IN: cx: number of bytes to be read
+;;
+;; OUT: di: contains at least cx bytes of read data
+;; OUT: cx: number of bytes actually read
+;; OUT: cf: set on error or end of file
+;
+;	push di
+;	push si
+;	push ax
+;	push bx
+;	push dx
+;
+;	mov dx, 0
+;
+;	cmp cx, 0
+;	je short .return
+;
+;	mov si, fs_buffer
+;	add si, [fs_buffer+fs_file_buffer.offset]
+;.loop:
+;	cmp word [fs_buffer+fs_file_buffer.left], 0
+;	je short .error
+;
+;	cmp word [fs_buffer+fs_file_buffer.offset], BytesPerSector
+;	jge short .next_sector
+;.nexted:
+;	cmp word [fs_buffer+fs_file_buffer.offset], 0
+;	je short .load_sector
+;.loaded:
+;	movsb
+;
+;	inc dx
+;	inc word [fs_buffer+fs_file_buffer.offset]
+;	inc word [fs_buffer+fs_file_buffer.pos]
+;	dec word [fs_buffer+fs_file_buffer.left]
+;
+;	loop .loop
+;
+;	jmp short .success
+;
+;.next_sector:
+;	push ax
+;	mov word ax, [fs_buffer+fs_file_buffer.sector]
+;	call fs_get_next_sector
+;	mov word [fs_buffer+fs_file_buffer.sector], ax
+;	pop ax
+;	jc short .error
+;
+;	mov word [fs_buffer+fs_file_buffer.offset], 0
+;	jmp short .nexted
+;
+;.load_sector:
+;	push ax
+;	push cx
+;
+;	mov ax, [fs_buffer+fs_file_buffer.sector]
+;	mov bx, fs_buffer+fs_file_buffer.buffer
+;	mov cl, 1
+;	call fs_read_sectors
+;
+;	pop cx
+;	pop ax
+;
+;	mov word [fs_buffer+fs_file_buffer.offset], 0
+;
+;	mov si, fs_buffer
+;	add si, [fs_buffer+fs_file_buffer.offset]
+;
+;	jmp short .loaded
+;
+;.error:
+;	stc
+;	jmp short .return
+;
+;.success:
+;	clc
+;.return:
+;	mov cx, dx
+;
+;	pop dx
+;	pop bx
+;	pop ax
+;	pop si
+;	pop di
+;
+;	ret
+
+
 fs_read:
 ;; IN: ax: file descriptor
 ; IN: di: buffer to load the data to
@@ -90,7 +186,7 @@ fs_read:
 ;
 ; OUT: di: contains at least cx bytes of read data
 ; OUT: cx: number of bytes actually read
-; OUT: cf: set on error and end of file
+; OUT: cf: set on error or end of file
 
 	push di
 	push si
@@ -101,12 +197,15 @@ fs_read:
 	mov dx, 0
 
 	cmp cx, 0
-	je short .error
+	je short .return
 
 	mov si, fs_buffer
 	add si, [fs_buffer+fs_file_buffer.offset]
+
 .loop:
-	cmp word [fs_buffer+fs_file_buffer.left], 0
+	mov bx, word [fs_buffer+fs_file_buffer.dirent] ; !!!? add bx, fs_dir_entry.length
+	mov bx, [bx+fs_dir_entry.length]
+	cmp word [fs_buffer+fs_file_buffer.pos], bx
 	je short .error
 
 	cmp word [fs_buffer+fs_file_buffer.offset], BytesPerSector
@@ -119,11 +218,12 @@ fs_read:
 
 	inc dx
 	inc word [fs_buffer+fs_file_buffer.offset]
-	dec word [fs_buffer+fs_file_buffer.left]
+	inc word [fs_buffer+fs_file_buffer.pos]
 
-	loop .loop
+	cmp cx, dx
+	je short .success
 
-	jmp short .success
+	jmp .loop
 
 .next_sector:
 	push ax
@@ -151,7 +251,6 @@ fs_read:
 	mov word [fs_buffer+fs_file_buffer.offset], 0
 
 	mov si, fs_buffer
-	add si, [fs_buffer+fs_file_buffer.offset]
 
 	jmp short .loaded
 
