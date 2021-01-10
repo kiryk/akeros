@@ -38,15 +38,14 @@ fs_dir_entry:
 	.length   equ 28
 
 fs_file_buffer:
-	.size   equ BytesPerSector + 2 + 2 + 2 + 2 + 2 + 1
+	.size   equ BytesPerSector + 2 + 2 + 2 + 2 + 1
 
 	.buffer equ 0
 	.sector equ BytesPerSector
 	.offset equ BytesPerSector + 2
-	.left   equ BytesPerSector + 4 ; to be deleted
-	.pos    equ BytesPerSector + 6
-	.dirent equ BytesPerSector + 8
-	.isopen equ BytesPerSector + 10 ; yet unused!!!
+	.pos    equ BytesPerSector + 4
+	.dirent equ BytesPerSector + 6
+	.isopen equ BytesPerSector + 8 ; yet unused!!!
 
 ; EXP -- this might end up in io_ -----------------------------------
 fs_buffer: times MaxOpenFiles times fs_file_buffer.size db 0
@@ -71,9 +70,6 @@ fs_open_file:
 
 	mov word [fs_buffer+fs_file_buffer.pos], 0
 	mov word [fs_buffer+fs_file_buffer.dirent], di
-
-;	mov bx, [di+fs_dir_entry.length]
-;	mov word [fs_buffer+fs_file_buffer.left], bx
 .success:
 	clc
 	jmp short .return
