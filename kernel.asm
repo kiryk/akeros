@@ -75,11 +75,11 @@ cmd_ls:
 
 	xchg si, di
 	call write_string
+	xchg si, di
 
 	mov al, `\n`
 	call write_char
 .skip:
-	mov si, di
 	call fs_next_file
 
 	loop .loop
