@@ -290,12 +290,12 @@ fs_write:
 	mov di, fs_buffer
 	add di, [fs_buffer+fs_file_buffer.offset]
 .loop:
-	cmp word [fs_buffer+fs_file_buffer.offset], 0
-	je short .next_sector
-.nexted:
 	cmp word [fs_buffer+fs_file_buffer.offset], BytesPerSector
 	jge short .store_sector
 .stored:
+	cmp word [fs_buffer+fs_file_buffer.offset], 0
+	je short .next_sector
+.nexted:
 	movsb
 
 	inc dx
@@ -316,16 +316,17 @@ fs_write:
 	push ax
 
 	mov ax, word [fs_buffer+fs_file_buffer.sector]
-	mov bx, ax
 
-	call fs_find_free_sector ; jc?
+	mov bx, ax
+	call fs_find_free_sector
+	jc os_fatal_error ; TODO: handle it more gently
 
 	xchg bx, ax
 	call fs_set_next_sector
 
 	mov ax, bx
 	mov bx, 0FFFh
-	call fs_set_next_sector
+	call fs_set_fat_entry
 
 	mov word [fs_buffer+fs_file_buffer.sector], ax
 
@@ -342,12 +343,13 @@ fs_write:
 	call fs_find_free_sector
 
 	mov bx, 0FFFh
-	call fs_set_next_sector
-
-	mov bx, word [fs_buffer+fs_file_buffer.dirent]
-	mov word [bx+fs_dir_entry.cluster], ax
+	call fs_set_fat_entry
 
 	mov word [fs_buffer+fs_file_buffer.sector], ax
+
+	sub ax, 31
+	mov bx, word [fs_buffer+fs_file_buffer.dirent]
+	mov word [bx+fs_dir_entry.cluster], ax
 
 	pop ax
 
@@ -371,7 +373,7 @@ fs_write:
 	mov bx, word [fs_buffer+fs_file_buffer.dirent]
 	add word [bx+fs_dir_entry.length], BytesPerSector
 
-	jmp short .stored
+	jmp .stored
 
 .error:
 	stc
@@ -398,6 +400,10 @@ fs_close:
 	push bx
 
 	mov ax, [fs_buffer+fs_file_buffer.offset]
+
+	cmp ax, 0
+	je short .stored
+
 	mov bx, [fs_buffer+fs_file_buffer.dirent]
 	add word [bx+fs_dir_entry.length], ax
 
@@ -405,7 +411,7 @@ fs_close:
 	mov bx, fs_buffer
 	mov cl, 1
 	call fs_write_sectors
-
+.stored:
 	call fs_write_fat
 	call fs_write_root
 
