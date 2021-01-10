@@ -156,19 +156,36 @@ cmd_mk:
 
 
 cmd_test:
-	mov di, .tag
-	call fs_tag_to_filename
-
+	call string_parse
+	jc .no_argument_error
 	mov si, di
-	call write_string
 
-	mov al, `\n`
-	call write_char
+	call fs_create_file
+	call fs_open_file
+
+	mov ax, 1
+	mov cx, 516
+	mov si, .byte
+.loop:
+	xchg ax, cx
+	call fs_write
+
+	xchg cx, ax
+	loop .loop
+
+	call fs_close
 
 	jmp readcmd
 
-	.tag times 15 db 0
+.no_argument_error:
+	mov si, .no_argument
+	call write_string
 
+	jmp readcmd
+
+	.no_argument db `test: usage: test filename\n`, 0
+	.filename    db `test.txt`, 0
+	.byte        db `!`
 
 write_char:
 	; IN: al: output char

@@ -366,7 +366,6 @@ fs_write:
 	pop ax
 
 	mov word [fs_buffer+fs_file_buffer.offset], 0
-
 	mov di, fs_buffer
 
 	mov bx, word [fs_buffer+fs_file_buffer.dirent]
@@ -860,11 +859,11 @@ fs_find_free_sector:
 	pop bx
 
 
-fs_set_next_sector:
+fs_set_fat_entry:
 ; IN:  ax: physical sector
-; IN:  bx: next physical sector
+; IN:  bx: new FAT entry value
 ;
-; OUT: sector ax is attached bx as its next sector
+; OUT: sector ax is attached bx as its value
 ;      in the FAT table
 
 	push ax
@@ -906,6 +905,21 @@ fs_set_next_sector:
 	pop cx
 	pop bx
 	pop ax
+
+	ret
+
+
+fs_set_next_sector:
+; IN:  ax: physical sector
+; IN:  bx: next physical sector
+;
+; OUT: sector ax is attached bx as its next sector
+;      in the FAT table
+
+	push bx
+	sub bx, 31
+	call fs_set_fat_entry
+	pop bx
 
 	ret
 
