@@ -43,7 +43,7 @@ fs_file_buffer:
 	.buffer equ 0
 	.sector equ BytesPerSector
 	.offset equ BytesPerSector + 2
-	.left   equ BytesPerSector + 4
+	.left   equ BytesPerSector + 4 ; to be deleted
 	.pos    equ BytesPerSector + 6
 	.dirent equ BytesPerSector + 8
 	.isopen equ BytesPerSector + 10 ; yet unused!!!
@@ -268,6 +268,154 @@ fs_read:
 	pop ax
 	pop si
 	pop di
+
+	ret
+
+
+fs_write:
+;; IN: ax: file descriptor
+; IN: si: buffer to load the data from
+; IN: cx: number of bytes to be written
+;
+; OUT: cx: number of bytes actually written
+; OUT: cf: set on error
+
+	push di
+	push si
+	push ax
+	push bx
+	push dx
+
+	mov dx, 0
+
+	cmp cx, 0
+	je .return
+
+	mov di, fs_buffer
+	add di, [fs_buffer+fs_file_buffer.offset]
+.loop:
+	cmp word [fs_buffer+fs_file_buffer.offset], 0
+	je short .next_sector
+.nexted:
+	cmp word [fs_buffer+fs_file_buffer.offset], BytesPerSector
+	jge short .store_sector
+.stored:
+	movsb
+
+	inc dx
+	inc word [fs_buffer+fs_file_buffer.offset]
+	inc word [fs_buffer+fs_file_buffer.pos]
+
+	cmp cx, dx
+	je short .success
+
+	jmp short .loop
+
+.next_sector:
+	mov bx, word [fs_buffer+fs_file_buffer.dirent]
+	mov bx, [bx+fs_dir_entry.length]
+	cmp bx, 0
+	je .first_sector
+
+	push ax
+
+	mov ax, word [fs_buffer+fs_file_buffer.sector]
+	mov bx, ax
+
+	call fs_find_free_sector ; jc?
+
+	xchg bx, ax
+	call fs_set_next_sector
+
+	mov ax, bx
+	mov bx, 0FFFh
+	call fs_set_next_sector
+
+	mov word [fs_buffer+fs_file_buffer.sector], ax
+
+	pop ax
+
+	jc short .error
+
+	jmp short .nexted
+
+.first_sector:
+	push ax
+
+	mov ax, FirstDataSector
+	call fs_find_free_sector
+
+	mov bx, 0FFFh
+	call fs_set_next_sector
+
+	mov bx, word [fs_buffer+fs_file_buffer.dirent]
+	mov word [bx+fs_dir_entry.cluster], ax
+
+	mov word [fs_buffer+fs_file_buffer.sector], ax
+
+	pop ax
+
+	jmp short .nexted
+
+.store_sector:
+	push ax
+	push cx
+
+	mov ax, [fs_buffer+fs_file_buffer.sector]
+	mov bx, fs_buffer+fs_file_buffer.buffer
+	mov cl, 1
+	call fs_write_sectors
+
+	pop cx
+	pop ax
+
+	mov word [fs_buffer+fs_file_buffer.offset], 0
+
+	mov di, fs_buffer
+
+	mov bx, word [fs_buffer+fs_file_buffer.dirent]
+	add word [bx+fs_dir_entry.length], BytesPerSector
+
+	jmp short .stored
+
+.error:
+	stc
+	jmp short .return
+
+.success:
+	clc
+.return:
+	mov cx, dx
+
+	pop dx
+	pop bx
+	pop ax
+	pop si
+	pop di
+
+	ret
+
+
+fs_close:
+;; IN: ax: file descriptor
+
+	push ax
+	push bx
+
+	mov ax, [fs_buffer+fs_file_buffer.offset]
+	mov bx, [fs_buffer+fs_file_buffer.dirent]
+	add word [bx+fs_dir_entry.length], ax
+
+	mov ax, [fs_buffer+fs_file_buffer.sector]
+	mov bx, fs_buffer
+	mov cl, 1
+	call fs_write_sectors
+
+	call fs_write_fat
+	call fs_write_root
+
+	pop bx
+	pop ax
 
 	ret
 
@@ -747,10 +895,12 @@ fs_set_next_sector:
 .odd_record:
 	and ax, 0000Fh
 	shl bx, 4
+	and bx, 0FFF0h
 	jmp short .insert
 
 .even_record:
 	and ax, 0F000h
+	and bx, 00FFFh
 .insert:
 	or ax, bx
 	mov word [si], ax
