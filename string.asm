@@ -181,6 +181,36 @@ string_length:
 	pop di
 
 
+string_reverse:
+; Reverses a string pointed by si.
+;
+; IN:  si: pointer to a string
+; OUT: string in si is reversed
+
+	push ax
+	push si
+	push di
+
+	call string_length
+	mov di, si
+	add di, ax
+	dec di
+.loop:
+	cmp si, di
+	jle short .return
+
+	lodsb
+	xchg byte [si], al
+	mov  byte [di], al
+
+	jmp short .loop
+
+.return:
+	pop di
+	pop si
+	pop ax
+
+
 string_char_isbetween:
 ; Checks whether a given character's is in the [bl; bh] range.
 ;
