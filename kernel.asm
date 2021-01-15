@@ -156,24 +156,13 @@ cmd_mk:
 
 
 cmd_test:
-	call string_parse
-	jc .no_argument_error
-	mov si, di
+	mov si, .no_argument
+	call string_reverse
 
-	call fs_create_file
-	call fs_open_file
+	call write_string
 
-	mov ax, 1
-	mov cx, 516
-	mov si, .byte
-.loop:
-	xchg ax, cx
-	call fs_write
-
-	xchg cx, ax
-	loop .loop
-
-	call fs_close
+	mov al, `\n`
+	call write_char
 
 	jmp readcmd
 

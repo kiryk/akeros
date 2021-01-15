@@ -156,7 +156,7 @@ string_find_char:
 .found:
 	stc                         ; The character was there, set carry
 .return:
-	mov di, si                  ; Save si in bi,
+	mov di, si                  ; Save si in di,
                                     ; before we restore the old si
 	pop si
 	ret
@@ -180,6 +180,8 @@ string_length:
 
 	pop di
 
+	ret
+
 
 string_reverse:
 ; Reverses a string pointed by si.
@@ -195,13 +197,17 @@ string_reverse:
 	mov di, si
 	add di, ax
 	dec di
+
 .loop:
 	cmp si, di
-	jle short .return
+	jge short .return
 
-	lodsb
-	xchg byte [si], al
-	mov  byte [di], al
+	mov  byte al, [si]
+	xchg byte [di], al
+	mov  byte [si], al
+
+	inc si
+	dec di
 
 	jmp short .loop
 
