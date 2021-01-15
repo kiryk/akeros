@@ -179,7 +179,6 @@ string_length:
 	sub ax, si
 
 	pop di
-
 	ret
 
 
@@ -215,6 +214,7 @@ string_reverse:
 	pop di
 	pop si
 	pop ax
+	ret
 
 
 string_char_isbetween:
