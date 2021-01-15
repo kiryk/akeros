@@ -131,33 +131,30 @@ string_int_to:
 ; Converts a string to integer.
 ;
 ; IN:  ax: unsigned value to be converted
-; IN:  si: pointer where the result will be stored
+; IN:  di: pointer where the result will be stored
 ;
-; OUT: si: contains a string representing the value in ax
+; OUT: di: contains a string representing the value in ax
 
-	push ax
-	push bx
-	push dx
-	push di
+	pusha
 
-	mov di, si
-	mov bx, 10
+	mov si, di                  ; Save the original di
+	mov bx, 10                  ; Set bx to decimal base
 .loop:
-	div ax
-	mov byte [di], dl
-	inc di
+	mov dx, 0                   ; Zero the remainder register
+	div bx                      ; Divide ax by 10
+	add dx, '0'                 ; Convert remainder to an ASCII digit
 
-	cmp ax, 0
+	mov byte [di], dl           ; Save the digit in di string
+	inc di                      ; Make di point to the next byte
+
+	cmp ax, 0                   ; If nothing is left, exit the loop
 	jg short .loop
 
-	mov byte [di], 0
+	mov byte [di], 0            ; End the string with a NUL char
 
-	call string_reverse
-
-	pop di
-	pop dx
-	pop bx
-	pop ax
+	call string_reverse         ; So far the least significant digit
+	                            ; is first, so reverse the string
+	popa
 	ret
 
 
@@ -227,6 +224,7 @@ string_reverse:
 	push di
 
 	call string_length
+
 	mov di, si
 	add di, ax
 	dec di

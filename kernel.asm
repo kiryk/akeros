@@ -156,11 +156,12 @@ cmd_mk:
 
 
 cmd_test:
-	mov si, .no_argument
-	call string_reverse
+	mov ax, 325
+	mov di, .string
+	call string_int_to
 
+	mov si, di
 	call write_string
-
 	mov al, `\n`
 	call write_char
 
@@ -174,7 +175,7 @@ cmd_test:
 
 	.no_argument db `test: usage: test filename\n`, 0
 	.filename    db `test.txt`, 0
-	.byte        db `!`
+	.string      times 30 db 0
 
 write_char:
 	; IN: al: output char
