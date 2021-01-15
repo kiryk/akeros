@@ -127,6 +127,40 @@ string_to_int:
 	ret
 
 
+string_int_to:
+; Converts a string to integer.
+;
+; IN:  ax: unsigned value to be converted
+; IN:  si: pointer where the result will be stored
+;
+; OUT: si: contains a string representing the value in ax
+
+	push ax
+	push bx
+	push dx
+	push di
+
+	mov di, si
+	mov bx, 10
+.loop:
+	div ax
+	mov byte [di], dl
+	inc di
+
+	cmp ax, 0
+	jg short .loop
+
+	mov byte [di], 0
+
+	call string_reverse
+
+	pop di
+	pop dx
+	pop bx
+	pop ax
+	ret
+
+
 string_find_char:
 ; Returns pointer to first occurence of a character in al,
 ; sets carry if found, clears if not.
