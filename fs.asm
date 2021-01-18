@@ -18,8 +18,8 @@
 
 	MaxOpenFiles      equ 5
 	ModeNone          equ 0
-        ModeRead          equ 1
-        ModeWrite         equ 2
+	ModeRead          equ 1
+	ModeWrite         equ 2
 
 ; structures
 fs_dir_entry:
@@ -56,7 +56,6 @@ fs_buffer:
   times fs_file_buffer.size db 0
 %endrep
 
-; !!! są różne stany odczytu tego samegu pliku, ale stan zapisu jest tylko jeden
 fs_open_read:
 ; IN: si: filename pointer
 ;
@@ -64,7 +63,6 @@ fs_open_read:
 ; OUT: cf: set on file not found
 ; OUT:     the file is ready to be read
 
-	push bp
 	push di
 	push cx
 	push bx
@@ -72,13 +70,13 @@ fs_open_read:
 	call fs_find_file
 	jc short .error
 
-	mov bp, fs_buffer
+	mov bx, fs_buffer
 	mov cx, 0
 .loop:
-	cmp byte [bp+fs_file_buffer.mode], ModeNone
+	cmp byte [bx+fs_file_buffer.mode], ModeNone
 	je short .success
 
-	add bp, fs_file_buffer.size
+	add bx, fs_file_buffer.size
 	inc cx
 
 	cmp cx, MaxOpenFiles
@@ -87,13 +85,13 @@ fs_open_read:
 	jmp short .loop
 
 .success:
-	mov word [bp+fs_file_buffer.sector], ax
-	mov word [bp+fs_file_buffer.offset], 0
+	mov word [bx+fs_file_buffer.sector], ax
+	mov word [bx+fs_file_buffer.offset], 0
 
-	mov word [bp+fs_file_buffer.pos], 0
-	mov word [bp+fs_file_buffer.dirent], di
+	mov word [bx+fs_file_buffer.pos], 0
+	mov word [bx+fs_file_buffer.dirent], di
 
-	mov byte [bp+fs_file_buffer.mode], ModeRead
+	mov byte [bx+fs_file_buffer.mode], ModeRead
 
 	clc
 	jmp short .return
@@ -106,7 +104,6 @@ fs_open_read:
 	pop bx
 	pop cx
 	pop di
-	pop bp
 
 	ret
 
@@ -117,44 +114,54 @@ fs_open_write:
 ; OUT: ax: file descriptor
 ; OUT: cf: set on file not found
 ; OUT:     the file is ready to receive data
+;
+; VARS:
+	.size equ 4
+	.base equ 0
+	.fd   equ 2
 
 	push bp
 	push di
 	push cx
 	push bx
 	push dx
+	sub sp, .size
+	mov bp, sp
 
 	call fs_find_file
 	jnc short .check_if_open
 
 	mov di, 0
 
-	jmp short .get_descriptor
+	jmp short .get_fd
 
 .check_if_open:
 	mov cx, 0
-	mov bp, fs_buffer
+	mov bx, fs_buffer
 .loop1:
-	cmp byte [bp+fs_file_buffer.mode], ModeWrite
+	cmp byte [bx+fs_file_buffer.mode], ModeWrite
 	jne .continue1
-	cmp word [bp+fs_file_buffer.dirent], di
-	je .success
+	cmp word [bx+fs_file_buffer.dirent], di
+	jne .continue1
+
+	mov [bp+.fd], cx
+	jmp .success
 
 .continue1:
-	add bp, fs_file_buffer.size
+	add bx, fs_file_buffer.size
 	inc cx
 
 	cmp cx, MaxOpenFiles
 	jl short .loop1
 
-.get_descriptor:
+.get_fd:
 	mov cx, 0
-	mov bp, fs_buffer
+	mov bx, fs_buffer
 .loop2:
-	cmp byte [bp+fs_file_buffer.mode], ModeNone
-	je short .break2
+	cmp byte [bx+fs_file_buffer.mode], ModeNone
+	je short .found_fd
 
-	add bp, fs_file_buffer.size
+	add bx, fs_file_buffer.size
 	inc cx
 
 	cmp cx, MaxOpenFiles
@@ -162,15 +169,20 @@ fs_open_write:
 
 	jmp .error
 
-.break2:
+.found_fd:
+	mov [bp+.fd], cx
+	mov [bp+.base], bx
+
 	cmp di, 0
 	jne short .loop3
+
 	call fs_create_file
+	jc short .error
 
 	; di - fine
 	mov ax, 0
 	mov dx, 0
-	mov bx, 0
+	mov cx, 0
 
 	jmp short .init
 
@@ -179,23 +191,22 @@ fs_open_write:
 	call fs_get_next_sector
 	jnc short .loop3
 
-	push cx
+.move_to_eof:
 	mov ax, dx
-	mov bx, bp
+	; bx - fine
 	mov cl, 1
 	call fs_read_sectors
-	pop cx
 
-	push ax
+	mov cx, ax
 	mov dx, 0
 	mov bx, 512
 	mov ax, [di+fs_dir_entry.length]
 	div bx
-	pop ax
+	mov ax, cx
 
-	mov bx, [di+fs_dir_entry.length]
+	mov cx, [di+fs_dir_entry.length]
 
-	cmp bx, 0
+	cmp cx, 0
 	je .init
 	cmp dx, 0
 	jg .init
@@ -203,21 +214,26 @@ fs_open_write:
 	mov dx, 512
 
 .init:
-	mov word [bp+fs_file_buffer.sector], ax
-	mov word [bp+fs_file_buffer.offset], dx
-	mov word [bp+fs_file_buffer.pos],    bx
-	mov word [bp+fs_file_buffer.dirent], di
-	mov byte [bp+fs_file_buffer.mode],   ModeWrite
+	mov bx, [bp+.base]
+
+	mov [bx+fs_file_buffer.sector], ax
+	mov [bx+fs_file_buffer.offset], dx
+	mov [bx+fs_file_buffer.pos],    cx
+	mov [bx+fs_file_buffer.dirent], di
+	mov [bx+fs_file_buffer.mode],   byte ModeWrite
 
 .success:
+	mov ax, [bp+.fd]
+
+	add sp, .size
 	clc
 	jmp short .return
 
 .error:
+	add sp, .size
 	stc
-.return:
-	mov ax, cx
 
+.return:
 	pop dx
 	pop bx
 	pop cx
@@ -235,6 +251,11 @@ fs_read:
 ; OUT: di: contains at least cx bytes of read data
 ; OUT: cx: number of bytes actually read
 ; OUT: cf: set on error or end of file
+;
+; VARS:
+	.size equ 4
+	.base equ 0
+	.max  equ 2
 
 	push bp
 	push di
@@ -242,84 +263,82 @@ fs_read:
 	push ax
 	push bx
 	push dx
+	sub sp, .size
+	mov bp, sp
 
 	mov dx, 0
 	mov bx, fs_file_buffer.size
 	mul bx
 	add ax, fs_buffer
-	mov bp, ax
 
-	; ax could be later used as dirent data pointer
-
-	cmp byte [bp+fs_file_buffer.mode], ModeRead
-	jne short .error
-
+	mov bx, ax
+	mov [bp+.base], ax
+	mov [bp+.max], cx
 	mov dx, 0
 
-	cmp cx, 0
+	cmp byte [bx+fs_file_buffer.mode], ModeRead
+	jne short .error
+
+	cmp word [bp+.max], 0
 	je short .return
 
-	mov si, bp
-	add si, [bp+fs_file_buffer.offset]
+	mov si, bx
+	add si, [bx+fs_file_buffer.offset]
 
 .loop:
-	mov bx, word [bp+fs_file_buffer.dirent]
-	mov bx, [bx+fs_dir_entry.length]
-	cmp word [bp+fs_file_buffer.pos], bx
+	mov bx, [bx+fs_file_buffer.dirent]
+	mov ax, [bx+fs_dir_entry.length]
+	mov bx, [bp+.base]
+	cmp ax, [bx+fs_file_buffer.pos]
 	je short .error
 
-	cmp word [bp+fs_file_buffer.offset], BytesPerSector
+	cmp word [bx+fs_file_buffer.offset], BytesPerSector
 	jge short .next_sector
 .nexted:
-	cmp word [bp+fs_file_buffer.offset], 0
+	cmp word [bx+fs_file_buffer.offset], 0
 	je short .load_sector
 .loaded:
 	movsb
 
 	inc dx
-	inc word [bp+fs_file_buffer.offset]
-	inc word [bp+fs_file_buffer.pos]
+	inc word [bx+fs_file_buffer.offset]
+	inc word [bx+fs_file_buffer.pos]
 
-	cmp cx, dx
+	cmp dx, [bp+.max]
 	je short .success
 
 	jmp .loop
 
 .next_sector:
-	push ax
-	mov word ax, [bp+fs_file_buffer.sector]
+	mov ax, word [bx+fs_file_buffer.sector]
 	call fs_get_next_sector
-	mov word [bp+fs_file_buffer.sector], ax
-	pop ax
+	mov word [bx+fs_file_buffer.sector], ax
 	jc short .error
 
-	mov word [bp+fs_file_buffer.offset], 0
+	mov word [bx+fs_file_buffer.offset], 0
 	jmp short .nexted
 
 .load_sector:
-	push ax
-	push cx
-
-	mov ax, [bp+fs_file_buffer.sector]
-	mov bx, bp+fs_file_buffer.buffer
+	mov ax, [bx+fs_file_buffer.sector]
+	; bx - fine
 	mov cl, 1
 	call fs_read_sectors
 
-	pop cx
-	pop ax
+	mov word [bx+fs_file_buffer.offset], 0
 
-	mov word [bp+fs_file_buffer.offset], 0
-
-	mov si, bp
+	mov si, bx
 
 	jmp short .loaded
 
 .error:
+	add sp, .size
 	stc
 	jmp short .return
 
 .success:
+	add sp, .size
 	clc
+
 .return:
 	mov cx, dx
 
@@ -340,6 +359,11 @@ fs_write:
 ;
 ; OUT: cx: number of bytes actually written
 ; OUT: cf: set on error
+;
+; VARS:
+	.size equ 4
+	.base equ 0
+	.max  equ 2
 
 	push bp
 	push di
@@ -347,50 +371,55 @@ fs_write:
 	push ax
 	push bx
 	push dx
+	sub sp, .size
+	mov bp, sp
 
 	mov dx, 0
 	mov bx, fs_file_buffer.size
 	mul bx
 	add ax, fs_buffer
-	mov bp, ax
+	mov bx, ax
 
-	cmp byte [bp+fs_file_buffer.mode], ModeWrite
-	jne .error
-
+	mov bx, ax
+	mov [bp+.base], ax
+	mov [bp+.max], cx
 	mov dx, 0
+
+	cmp byte [bx+fs_file_buffer.mode], ModeWrite
+	jne .error
 
 	cmp cx, 0
 	je .return
 
-	mov di, bp
-	add di, [bp+fs_file_buffer.offset]
+	mov di, bx
+	add di, [bx+fs_file_buffer.offset]
+
 .loop:
-	cmp word [bp+fs_file_buffer.offset], BytesPerSector
+	cmp word [bx+fs_file_buffer.offset], BytesPerSector
 	jge short .store_sector
 .stored:
-	cmp word [bp+fs_file_buffer.offset], 0
+	cmp word [bx+fs_file_buffer.offset], 0
 	je short .next_sector
 .nexted:
 	movsb
 
 	inc dx
-	inc word [bp+fs_file_buffer.offset]
-	inc word [bp+fs_file_buffer.pos]
+	inc word [bx+fs_file_buffer.offset]
+	inc word [bx+fs_file_buffer.pos]
 
-	cmp cx, dx
+	cmp dx, [bp+.max]
 	je short .success
 
 	jmp short .loop
 
 .next_sector:
-	mov bx, word [bp+fs_file_buffer.dirent]
+	mov bx, [bx+fs_file_buffer.dirent]
 	mov bx, [bx+fs_dir_entry.length]
 	cmp bx, 0
+	mov bx, [bp+.base]
 	je .first_sector
 
-	push ax
-
-	mov ax, word [bp+fs_file_buffer.sector]
+	mov ax, word [bx+fs_file_buffer.sector]
 
 	mov bx, ax
 	call fs_find_free_sector
@@ -402,59 +431,54 @@ fs_write:
 	mov ax, bx
 	mov bx, 0FFFh
 	call fs_set_fat_entry
+	mov bx, [bp+.base]
 
-	mov word [bp+fs_file_buffer.sector], ax
-
-	pop ax
+	mov [bx+fs_file_buffer.sector], ax
 
 	jc short .error
 
 	jmp short .nexted
 
 .first_sector:
-	push ax
-
 	mov ax, FirstDataSector
 	call fs_find_free_sector
 
 	mov bx, 0FFFh
 	call fs_set_fat_entry
+	mov bx, [bp+.base]
 
-	mov word [bp+fs_file_buffer.sector], ax
+	mov [bx+fs_file_buffer.sector], ax
 
 	sub ax, 31
-	mov bx, word [bp+fs_file_buffer.dirent]
-	mov word [bx+fs_dir_entry.cluster], ax
+	mov bx, [bx+fs_file_buffer.dirent]
+	mov [bx+fs_dir_entry.cluster], ax
 
-	pop ax
+	mov bx, [bp+.base]
 
 	jmp short .nexted
 
 .store_sector:
-	push ax
-	push cx
-
-	mov ax, [bp+fs_file_buffer.sector]
-	mov bx, bp+fs_file_buffer.buffer
+	mov ax, [bx+fs_file_buffer.sector]
+	; bx - fine
 	mov cl, 1
 	call fs_write_sectors
 
-	pop cx
-	pop ax
+	mov word [bx+fs_file_buffer.offset], 0
+	mov di, bx
 
-	mov word [bp+fs_file_buffer.offset], 0
-	mov di, bp
-
-	mov bx, word [bp+fs_file_buffer.dirent]
+	mov bx, [bx+fs_file_buffer.dirent]
 	add word [bx+fs_dir_entry.length], BytesPerSector
+	mov bx, [bp+.base]
 
 	jmp .stored
 
 .error:
+	add sp, .size
 	stc
 	jmp short .return
 
 .success:
+	add sp, .size
 	clc
 .return:
 	mov cx, dx
@@ -478,31 +502,33 @@ fs_close:
 	mov bx, fs_file_buffer.size
 	mul bx
 	add ax, fs_buffer
-	mov bp, ax
+	mov bx, ax
 
-	cmp byte [bp+fs_file_buffer.mode], ModeNone
+	cmp byte [bx+fs_file_buffer.mode], ModeNone
 	je short .return
 
-	cmp byte [bp+fs_file_buffer.mode], ModeRead
+	cmp byte [bx+fs_file_buffer.mode], ModeRead
 	je short .return
 
-	cmp word [bp+fs_file_buffer.offset], 0
+	cmp word [bx+fs_file_buffer.offset], 0
 	je short .stored
 
-	mov ax, [bp+fs_file_buffer.pos]
+	mov ax, [bx+fs_file_buffer.pos]
 
-	mov bx, [bp+fs_file_buffer.dirent]
+	mov cx, bx
+	mov bx, [bx+fs_file_buffer.dirent]
 	mov [bx+fs_dir_entry.length], ax
+	mov bx, cx
 
-	mov ax, [bp+fs_file_buffer.sector]
-	mov bx, bp
+	mov ax, [bx+fs_file_buffer.sector]
+	; bx - fine
 	mov cl, 1
 	call fs_write_sectors
 .stored:
 	call fs_write_fat
 	call fs_write_root
 .return:
-	mov byte [bp+fs_file_buffer.mode], ModeNone
+	mov byte [bx+fs_file_buffer.mode], ModeNone
 
 	popa
 
