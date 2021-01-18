@@ -23,6 +23,32 @@ init:
 	call fs_read_fat
 	call fs_read_root
 
+welcome:
+	mov si, os_kernel_size
+	call write_string
+
+	mov ax, kernel_end
+	mov di, os_output
+	call string_int_to
+
+	mov si, di
+	call write_string
+
+	mov al, `\n`
+	call write_char
+
+	mov si, os_memory_size
+	call write_string
+
+	int 12h
+	mov di, os_output
+	call string_int_to
+
+	mov si, di
+	call write_string
+
+	mov al, `\n`
+	call write_char
 readcmd:
 	mov si, os_prompt
 	call write_string
@@ -33,6 +59,11 @@ readcmd:
 	mov si, di
 	call string_parse
 	mov ax, si
+
+	mov si, os_cmd_none
+	call string_compare
+	mov si, ax
+	je readcmd
 
 	mov si, os_cmd_ls
 	call string_compare
@@ -53,6 +84,11 @@ readcmd:
 	call string_compare
 	mov si, ax
 	je cmd_mk
+
+	mov si, os_cmd_rm
+	call string_compare
+	mov si, ax
+	je cmd_rm
 
 	mov si, os_cmd_unknown
 	call write_string
@@ -83,7 +119,7 @@ cmd_ls:
 	call fs_next_file
 
 	loop .loop
-	jmp short readcmd
+	jmp readcmd
 
 	.filename times 13 db 0
 
@@ -93,7 +129,7 @@ cmd_type:
 	jc .no_argument_error
 	mov si, di
 
-	call fs_open_file
+	call fs_open_read
 	jc short .no_file_error
 
 	mov di, .buffer
@@ -109,6 +145,8 @@ cmd_type:
 
 .last:
 	call write_limited_string
+
+	call fs_close
 
 	jmp readcmd
 
@@ -155,15 +193,47 @@ cmd_mk:
 	.no_argument db `mk: usage: mk filename\n`, 0
 
 
+cmd_rm:
+	call string_parse
+	jc .no_argument_error
+	mov si, di
+
+	call fs_remove_file
+	jc short .cant_remove_error
+
+	jmp readcmd
+
+.cant_remove_error:
+	mov si, .cant_remove
+	call write_string
+
+	jmp readcmd
+
+.no_argument_error:
+	mov si, .no_argument
+	call write_string
+
+	jmp readcmd
+
+	.cant_remove db `mk: could not remove\n`, 0
+	.no_argument db `mk: usage: mk filename\n`, 0
+
+
 cmd_test:
-	mov ax, 325
-	mov di, .string
-	call string_int_to
+	call string_parse
+	jc .no_argument_error
+
+	mov si, .filename
+	call fs_open_write
+
+	mov cx, ax
 
 	mov si, di
-	call write_string
-	mov al, `\n`
-	call write_char
+	call string_length
+	xchg cx, ax
+
+	call fs_write
+	call fs_close
 
 	jmp readcmd
 
@@ -174,8 +244,7 @@ cmd_test:
 	jmp readcmd
 
 	.no_argument db `test: usage: test filename\n`, 0
-	.filename    db `test.txt`, 0
-	.string      times 30 db 0
+	.filename    db `test.log`, 0
 
 write_char:
 	; IN: al: output char
@@ -222,6 +291,7 @@ write_limited_string:
 	pop ax
 	pop si
 	ret
+
 
 write_string:
 ; IN: si: output string
@@ -304,14 +374,21 @@ os_fatal_error:
 	os_newline db 10, 0
 	os_prompt  db "- ", 0
 	os_input   times 30 db 0
+	os_output  times 80 db 0
+
+	os_memory  dw 0
 
 	os_cmd_unknown db `unknown command\n`, 0
+	os_cmd_none    db "", 0
 	os_cmd_ls      db "ls", 0
 	os_cmd_type    db "type", 0
 	os_cmd_test    db "test", 0
 	os_cmd_mk      db "mk", 0
+	os_cmd_rm      db "rm", 0
 
-	fat_buffer_uptodate db 0
+	os_kernel_size db `Kernel size:  `, 0
+	os_memory_size db `KB of memory: `, 0
+
 
 %INCLUDE "fs.asm"
 %INCLUDE "string.asm"
@@ -322,3 +399,4 @@ os_fatal_error:
 
 fat_buffer:
 root_buffer equ fat_buffer+9*512 ; (size of FAT in the buffer)
+kernel_end  equ root_buffer+14*512
