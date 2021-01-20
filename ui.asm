@@ -1,5 +1,5 @@
 ui_write_char:
-	; IN: al: output char
+; IN: al: output char
 
 	push ax
 
@@ -16,6 +16,18 @@ ui_write_char:
 	mov al, 10
 	int 10h
 .return:
+	pop ax
+	ret
+
+
+ui_write_newline:
+; IN: N/A
+
+	push ax
+
+	mov al, `\n`
+	call ui_write_char
+
 	pop ax
 	ret
 
