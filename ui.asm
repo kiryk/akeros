@@ -63,6 +63,32 @@ ui_write_string:
 	ret
 
 
+ui_write_int:
+	; IN: ax: output integer
+
+	.size   equ 7
+	.string equ 0
+
+	push ax
+	push si
+	push di
+	push bp
+	sub sp, .size
+
+	mov di, bp
+	call string_int_to
+
+	mov si, bp
+	call ui_write_string
+.return:
+	add sp, .size
+	pop bp
+	pop di
+	pop si
+	pop ax
+	ret
+
+
 ui_read_string:
 ; IN:  di: input buffer pointer
 ; OUT: modified buffer
