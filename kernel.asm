@@ -1,5 +1,36 @@
 	bits 16
 
+	jmp os_start
+
+	jmp fs_open_read            ; 3
+	jmp fs_open_write           ; 6
+	jmp fs_read                 ; 9
+	jmp fs_write                ; 12
+	jmp fs_close                ; 15
+	jmp fs_create_file          ; 18
+	jmp fs_remove_file          ; 21
+	jmp fs_find_file            ; 24
+	jmp string_compare          ; 27
+	jmp string_copy
+	jmp string_parse            ; 30
+	jmp string_to_int           ; 33
+	jmp string_int_to           ; 36
+	jmp string_find_char        ; 39
+	jmp string_length           ; 42
+	jmp string_reverse          ; 45
+	jmp string_char_isbetween   ; 48
+	jmp string_char_iswhite     ; 51
+	jmp string_char_isdigit     ; 54
+	jmp string_char_isalpha     ; 57
+	jmp string_char_islower     ; 60
+	jmp string_char_isupper     ; 63
+	jmp ui_write_char           ; 66
+	jmp ui_write_newline        ; 69
+	jmp ui_write_lim_string     ; 72
+	jmp ui_write_string         ; 75
+	jmp ui_write_int            ; 78
+	jmp ui_read_string          ; 81
+
 os_start:
 ; IN: al: device number from bootloader
 
@@ -90,10 +121,14 @@ readcmd:
 	mov si, ax
 	je cmd_rm
 
+	mov si, di
+	jmp cmd_run
+
 	mov si, os_cmd_unknown
 	call ui_write_string
 
 	jmp short readcmd
+
 
 cmd_ls:
 	call fs_read_root
@@ -122,6 +157,40 @@ cmd_ls:
 	jmp readcmd
 
 	.filename times 13 db 0
+
+
+cmd_run:
+	mov di, .filename
+	call string_copy
+
+	call string_length
+	add di, ax
+
+	mov si, .ext
+	call string_copy
+
+	mov si, .filename
+	call fs_find_file
+	jc .no_file_error
+
+	mov bx, 5000h
+	call fs_read_file
+
+	call 5000h
+
+	jmp readcmd
+
+.no_file_error:
+	call ui_write_string
+
+	mov si, .no_file
+	call ui_write_string
+
+	jmp readcmd
+
+	.no_file     db `: program not found\n`, 0
+	.ext         db `.prg`, 0
+	.filename    times 15 db 0
 
 
 cmd_type:
@@ -257,7 +326,7 @@ os_fatal_error:
 
 ; variables
 	os_newline db 10, 0
-	os_prompt  db "- ", 0
+	os_prompt  db "% ", 0
 	os_input   times 30 db 0
 	os_output  times 80 db 0
 
@@ -265,6 +334,7 @@ os_fatal_error:
 
 	os_cmd_unknown db `unknown command\n`, 0
 	os_cmd_none    db "", 0
+	os_cmd_run     db "run", 0
 	os_cmd_ls      db "ls", 0
 	os_cmd_type    db "type", 0
 	os_cmd_test    db "test", 0
