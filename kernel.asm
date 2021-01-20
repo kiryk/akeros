@@ -110,7 +110,6 @@ readcmd:
 	mov si, ax
 	je cmd_rm
 
-	mov si, di
 	jmp cmd_run
 
 	mov si, os_cmd_unknown
@@ -149,6 +148,9 @@ cmd_ls:
 
 
 cmd_run:
+	mov cx, si
+
+	mov si, di
 	mov di, .filename
 	call string_copy
 
@@ -165,6 +167,7 @@ cmd_run:
 	mov bx, 5000h
 	call fs_read_file
 
+	mov si, cx
 	call 5000h
 
 	jmp readcmd
