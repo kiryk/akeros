@@ -1,3 +1,4 @@
+bits 16
 org 5000h
 
 %include "user.inc"
