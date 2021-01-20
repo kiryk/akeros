@@ -50,7 +50,6 @@ ui_write_lim_string:
 	dec cx
 	jmp short .loop
 .return:
-
 	pop cx
 	pop ax
 	pop si
