@@ -85,6 +85,7 @@ ui_write_int:
 	push di
 	push bp
 	sub sp, .size
+	mov bp, sp
 
 	mov di, bp
 	call string_int_to
