@@ -316,7 +316,7 @@ os_fatal_error:
 ; variables
 	os_newline db 10, 0
 	os_prompt  db "% ", 0
-	os_input   times 30 db 0
+	os_input   times 160 db 0
 	os_output  times 80 db 0
 
 	os_memory  dw 0
