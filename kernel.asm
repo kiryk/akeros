@@ -2,34 +2,35 @@
 
 	jmp os_start
 
-	jmp fs_open_read            ; 3
-	jmp fs_open_write           ; 6
-	jmp fs_read                 ; 9
-	jmp fs_write                ; 12
-	jmp fs_close                ; 15
-	jmp fs_create_file          ; 18
-	jmp fs_remove_file          ; 21
-	jmp fs_find_file            ; 24
-	jmp string_compare          ; 27
-	jmp string_copy
-	jmp string_parse            ; 30
-	jmp string_to_int           ; 33
-	jmp string_int_to           ; 36
-	jmp string_find_char        ; 39
-	jmp string_length           ; 42
-	jmp string_reverse          ; 45
-	jmp string_char_isbetween   ; 48
-	jmp string_char_iswhite     ; 51
-	jmp string_char_isdigit     ; 54
-	jmp string_char_isalpha     ; 57
-	jmp string_char_islower     ; 60
-	jmp string_char_isupper     ; 63
-	jmp ui_write_char           ; 66
-	jmp ui_write_newline        ; 69
-	jmp ui_write_lim_string     ; 72
-	jmp ui_write_string         ; 75
-	jmp ui_write_int            ; 78
-	jmp ui_read_string          ; 81
+	; system call name          ; index
+	jmp fs_open_read            ; 3*1
+	jmp fs_open_write           ; 3*2
+	jmp fs_read                 ; 3*3
+	jmp fs_write                ; 3*4
+	jmp fs_close                ; 3*5
+	jmp fs_create_file          ; 3*6
+	jmp fs_remove_file          ; 3*7
+	jmp fs_find_file            ; 3*8
+	jmp string_compare          ; 3*9
+	jmp string_copy             ; 3*10
+	jmp string_parse            ; 3*11
+	jmp string_to_int           ; 3*12
+	jmp string_int_to           ; 3*13
+	jmp string_find_char        ; 3*14
+	jmp string_length           ; 3*15
+	jmp string_reverse          ; 3*16
+	jmp string_char_isbetween   ; 3*17
+	jmp string_char_iswhite     ; 3*18
+	jmp string_char_isdigit     ; 3*19
+	jmp string_char_isalpha     ; 3*20
+	jmp string_char_islower     ; 3*21
+	jmp string_char_isupper     ; 3*22
+	jmp ui_write_char           ; 3*23
+	jmp ui_write_newline        ; 3*24
+	jmp ui_write_lim_string     ; 3*25
+	jmp ui_write_string         ; 3*26
+	jmp ui_write_int            ; 3*27
+	jmp ui_read_string          ; 3*28
 
 os_start:
 ; IN: al: device number from bootloader
@@ -59,27 +60,15 @@ welcome:
 	call ui_write_string
 
 	mov ax, kernel_end
-	mov di, os_output
-	call string_int_to
-
-	mov si, di
-	call ui_write_string
-
-	mov al, `\n`
-	call ui_write_char
+	call ui_write_int
+	call ui_write_newline
 
 	mov si, os_memory_size
 	call ui_write_string
 
 	int 12h
-	mov di, os_output
-	call string_int_to
-
-	mov si, di
-	call ui_write_string
-
-	mov al, `\n`
-	call ui_write_char
+	call ui_write_int
+	call ui_write_newline
 readcmd:
 	mov si, os_prompt
 	call ui_write_string
