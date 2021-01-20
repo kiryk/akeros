@@ -28,6 +28,31 @@ string_compare:
 	ret
 
 
+string_copy:
+; Copies all chars from si to di.
+;
+; IN:  si: source string
+; IN:  di: destination
+;
+; OUT: di: contains the same chars as si
+
+	push si
+	push di
+	push ax
+
+.loop:
+	lodsb                       ; Load [si] to al
+	stosb                       ; Store al in [di]
+
+	cmp al, 0                   ; Was the char NUL?
+	jne .loop                   ; If not, continue
+.return:
+	pop ax
+	pop di
+	pop si
+	ret
+
+
 string_parse:
 ; Finds the first word in a given string and null-terminates it,
 ; pointer to the rest of the string is preserved.
