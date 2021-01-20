@@ -25,36 +25,36 @@ init:
 
 welcome:
 	mov si, os_kernel_size
-	call write_string
+	call ui_write_string
 
 	mov ax, kernel_end
 	mov di, os_output
 	call string_int_to
 
 	mov si, di
-	call write_string
+	call ui_write_string
 
 	mov al, `\n`
-	call write_char
+	call ui_write_char
 
 	mov si, os_memory_size
-	call write_string
+	call ui_write_string
 
 	int 12h
 	mov di, os_output
 	call string_int_to
 
 	mov si, di
-	call write_string
+	call ui_write_string
 
 	mov al, `\n`
-	call write_char
+	call ui_write_char
 readcmd:
 	mov si, os_prompt
-	call write_string
+	call ui_write_string
 
 	mov di, os_input
-	call read_string
+	call ui_read_string
 
 	mov si, di
 	call string_parse
@@ -91,7 +91,7 @@ readcmd:
 	je cmd_rm
 
 	mov si, os_cmd_unknown
-	call write_string
+	call ui_write_string
 
 	jmp short readcmd
 
@@ -110,11 +110,11 @@ cmd_ls:
 	call fs_tag_to_filename
 
 	xchg si, di
-	call write_string
+	call ui_write_string
 	xchg si, di
 
 	mov al, `\n`
-	call write_char
+	call ui_write_char
 .skip:
 	call fs_next_file
 
@@ -139,12 +139,12 @@ cmd_type:
 	call fs_read
 	jc short .last
 
-	call write_limited_string
+	call ui_write_lim_string
 
 	jmp short .loop
 
 .last:
-	call write_limited_string
+	call ui_write_lim_string
 
 	call fs_close
 
@@ -152,13 +152,13 @@ cmd_type:
 
 .no_file_error:
 	mov si, .no_file
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
 .no_argument_error:
 	mov si, .no_argument
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
@@ -179,13 +179,13 @@ cmd_mk:
 
 .cant_make_error:
 	mov si, .cant_make
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
 .no_argument_error:
 	mov si, .no_argument
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
@@ -205,13 +205,13 @@ cmd_rm:
 
 .cant_remove_error:
 	mov si, .cant_remove
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
 .no_argument_error:
 	mov si, .no_argument
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
@@ -239,132 +239,17 @@ cmd_test:
 
 .no_argument_error:
 	mov si, .no_argument
-	call write_string
+	call ui_write_string
 
 	jmp readcmd
 
 	.no_argument db `test: usage: test filename\n`, 0
 	.filename    db `test.log`, 0
 
-write_char:
-	; IN: al: output char
-
-	push ax
-
-	mov ah, 0Eh
-
-	cmp al, 10 ; '\n'
-	je short .newline
-
-	int 10h
-	jmp short .return
-.newline:
-	mov al, 13
-	int 10h
-	mov al, 10
-	int 10h
-.return:
-	pop ax
-	ret
-
-
-write_limited_string:
-; IN: si: output string
-; IN: cx: output string length
-
-	push si
-	push ax
-	push cx
-
-.loop:
-	cmp cx, 0
-	je short .return
-
-	lodsb
-	call write_char
-
-	dec cx
-	jmp short .loop
-.return:
-
-	pop cx
-	pop ax
-	pop si
-	ret
-
-
-write_string:
-; IN: si: output string
-
-	push ax
-	push si
-
-.loop:
-	lodsb
-	cmp al, 0
-	je short .return
-	call write_char
-	jmp short .loop
-.return:
-	pop si
-	pop ax
-	ret
-
-
-read_string:
-; IN:  di: input buffer pointer
-; OUT: modified buffer
-
-	push ax
-	push bx
-	push di
-
-	mov bx, di
-.loop:
-	mov ah, 00h
-	int 16h
-
-	cmp al, `\b`
-	je short .backspace
-
-	cmp al, `\r`
-	je short .return
-
-	call write_char
-
-	stosb
-	jmp short .loop
-
-.backspace:
-	cmp bx, di
-	je short .loop
-
-	mov al, `\b`
-	call write_char
-	mov al, ` `
-	call write_char
-	mov al, `\b`
-	call write_char
-
-	dec di
-	jmp short .loop
-
-.return:
-	mov byte [di], 0
-
-	mov al, 10
-	call write_char
-
-	pop di
-	pop bx
-	pop ax
-
-	ret
-
 
 os_fatal_error:
 	mov si, .error
-	call write_string
+	call ui_write_string
 	jmp $
 
 	.error db `kernel fatal error, halting.\n`, 0
@@ -392,6 +277,7 @@ os_fatal_error:
 
 %INCLUDE "fs.asm"
 %INCLUDE "string.asm"
+%INCLUDE "ui.asm"
 
 ; memory management and kernel buffer
 ; (must be included as last)
