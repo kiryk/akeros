@@ -85,6 +85,11 @@ readcmd:
 	mov si, ax
 	je readcmd
 
+	mov si, os_cmd_mv
+	call string_compare
+	mov si, ax
+	je cmd_mv
+
 	mov si, os_cmd_ls
 	call string_compare
 	mov si, ax
@@ -118,6 +123,38 @@ readcmd:
 	jmp short readcmd
 
 
+cmd_mv:
+	call string_parse
+	jc short .arg_error
+	mov ax, di
+
+	call string_parse
+	jc short .arg_error
+	mov bx, di
+
+	mov si, ax
+	mov di, bx
+	call fs_rename_file
+	jc short .rename_error
+
+	jmp readcmd
+
+.arg_error:
+	mov si, .arg_msg
+	call ui_write_string
+
+	jmp readcmd
+
+.rename_error:
+	mov si, .rename_msg
+	call ui_write_string
+
+	jmp readcmd
+
+	.arg_msg    db `mv: usage: filename [old name] [new name]\n`, 0
+	.rename_msg db `mv: could not rename the file\n`, 0
+
+
 cmd_ls:
 	call fs_read_root
 
@@ -125,7 +162,7 @@ cmd_ls:
 	mov cx, MaxRootEntries
 .loop:
 	cmp byte [si], 000h
-	je short readcmd
+	je readcmd
 	cmp byte [si], 0E5h
 	je short .skip
 
