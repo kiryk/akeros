@@ -167,7 +167,7 @@ fs_open_read:
 	inc cx                      ; Update cx
 
 	cmp cx, MaxOpenFiles        ; If we've reached the last buffer
-	jge short .error            ; return with error
+	jae short .error            ; return with error
 
 	jmp short .loop             ; Otherwise repeat the loop
 
@@ -248,7 +248,7 @@ fs_open_write:
 	inc cx
 
 	cmp cx, MaxOpenFiles        ; If we haven't reached the last buffer
-	jl short .loop1             ; continue the loop
+	jnae short .loop1           ; continue the loop
 
 	; If the above loop ended and we're here, it means the file
 	; isn't open. Now we're going to find a free buffer to use for
@@ -265,7 +265,7 @@ fs_open_write:
 	inc cx
 
 	cmp cx, MaxOpenFiles        ; If we haven't reached the last buffer
-	jl short .loop2             ; continue the loop
+	jnae short .loop2           ; continue the loop
 
 	; If we got here, it means all buffers are busy
 	; so we are going to communicate failure
@@ -326,7 +326,7 @@ fs_open_write:
 	; Otherwise check if the offset equals 0
 
 	cmp dx, 0
-	jg .init
+	ja .init
 
 	; If it does, make it 512, as required by fs_read
 
@@ -422,7 +422,7 @@ fs_read:
 	; If we reached the end of the sector, calculate the next one:
 
 	cmp word [bx+fs_buffer.offset], BytesPerSector
-	jge short .next_sector
+	jae short .next_sector
 .nexted:
 	; If we start reading a new sector, load it into memory:
 
@@ -534,7 +534,7 @@ fs_write:
 	; If we've filled the buffer, write the contents to the disk:
 
 	cmp word [bx+fs_buffer.offset], BytesPerSector
-	jge short .store_sector
+	jae short .store_sector
 .stored:
 	; If we start writing a new sector, get it's number:
 
@@ -719,7 +719,7 @@ fs_filename_to_tag:
 	sub dx, cx                  ; before the dot and save in dx
 
 	cmp cx,fs_dir_entry.basesize; If the base name is longer than
-	jg short .error             ; the maximal allowed length, error
+	ja short .error             ; the maximal allowed length, error
 
 	rep movsb                   ; Now rewrite the cx chars from si to di
 
@@ -739,10 +739,10 @@ fs_filename_to_tag:
 	sub dx, cx                  ; and the actual one, save it in dx
 
 	cmp cx,fs_dir_entry.extsize
-	jg short .error             ; If the extension is too long, error
+	ja short .error             ; If the extension is too long, error
 
 	cmp cx, 0
-	jle short .error            ; If the extension is empty, error
+	jna short .error            ; If the extension is empty, error
 
 	rep movsb                   ; Rewrite the extension chars
 
@@ -1266,7 +1266,7 @@ fs_get_next_sector:
 	cmp ax, 0FF0h               ; Is it the last sector in the chain?
 	jae short .error
 	cmp ax, 0001                ; Is it a free sector?
-	jle short .error
+	jna short .error
 
 	add ax, 31                  ; Convert ax to a physical sector number
 
