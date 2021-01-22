@@ -43,7 +43,7 @@ os_start:
 	mov sp, 0FFFFh
 	sti
 
-	mov bx, 2000h
+	mov bx, os_kernel_base
 	mov ds, bx
 	mov es, bx
 	mov fs, bx
@@ -317,6 +317,8 @@ os_fatal_error:
 
 
 ; variables
+	os_kernel_base equ 2000h
+
 	os_newline db 10, 0
 	os_prompt  db "% ", 0
 	os_input   times 160 db 0
@@ -326,12 +328,14 @@ os_fatal_error:
 
 	os_cmd_unknown db `unknown command\n`, 0
 	os_cmd_none    db "", 0
-	os_cmd_run     db "run", 0
+	os_cmd_cp      db "cp", 0
 	os_cmd_ls      db "ls", 0
-	os_cmd_type    db "type", 0
-	os_cmd_test    db "test", 0
 	os_cmd_mk      db "mk", 0
+	os_cmd_mv      db "mv", 0
 	os_cmd_rm      db "rm", 0
+	os_cmd_run     db "run", 0
+	os_cmd_test    db "test", 0
+	os_cmd_type    db "type", 0
 
 	os_kernel_size db `Kernel size:  `, 0
 	os_memory_size db `KB of memory: `, 0
