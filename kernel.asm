@@ -91,6 +91,11 @@ readcmd:
 	mov si, ax
 	je cmd_mv
 
+	mov si, os_cmd_cp
+	call string_compare
+	mov si, ax
+	je cmd_cp
+
 	mov si, os_cmd_ls
 	call string_compare
 	mov si, ax
@@ -154,6 +159,85 @@ cmd_mv:
 
 	.arg_msg    db `mv: usage: filename [old name] [new name]\n`, 0
 	.rename_msg db `mv: could not rename the file\n`, 0
+
+
+cmd_cp:
+	call string_parse
+	jc short .arg_error
+	mov bx, di
+
+	call string_parse
+	jc short .arg_error
+	mov dx, di
+
+	mov si, bx
+	call fs_open_read
+	jc short .file_error
+	mov bx, ax
+
+	mov si, dx
+	call fs_remove_file
+
+	call fs_open_write
+	jc short .file_error
+	mov dx, ax
+
+	mov si, .buf
+	mov di, .buf
+.loop:
+	mov ax, bx
+	mov cx, .length
+	call fs_read
+
+	cmp cx, 0
+	je short .close
+
+	mov ax, dx
+	call fs_write
+	jc .write_error
+
+	jmp short .loop
+
+.close:
+	mov ax, bx
+	call fs_close
+
+	mov ax, dx
+	call fs_close
+
+	jmp readcmd
+
+.arg_error:
+	mov si, .arg_msg
+	call ui_write_string
+
+	jmp .close
+
+.write_error:
+	mov si, .write_msg
+	call ui_write_string
+
+	jmp .close
+
+.file_error:
+	mov ax, si
+
+	mov si, .file_msg
+	call ui_write_string
+
+	mov si, ax
+	call ui_write_string
+
+	call ui_write_newline
+
+	jmp .close
+
+	.arg_msg   db `cp: not enough arguments given\n`, 0
+	.file_msg  db `cp: could not open file: `, 0
+	.write_msg db `cp: a write error occured during copying\n`, 0
+
+	.buf  times 32 db 0
+	.length equ 32
 
 
 cmd_ls:
