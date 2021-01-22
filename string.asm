@@ -153,7 +153,7 @@ string_to_int:
 
 
 string_int_to:
-; Converts a string to integer.
+; Converts an integer to string.
 ;
 ; IN:  ax: unsigned value to be converted
 ; IN:  di: pointer where the result will be stored
