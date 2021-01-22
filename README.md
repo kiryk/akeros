@@ -4,7 +4,7 @@ Aleksander Kiryk, 2021
 
 The build.bat script uses:
 - NASM to compile the sources,
-- ImDisk to binaries on a floppy image.
+- ImDisk to save binaries on a floppy image.
 
 The test.bat script uses:
 - QEMU (`qemu-system-i386`) as an emulator for the OS.
@@ -12,8 +12,9 @@ The test.bat script uses:
 # The shell
 
 The shell supports following commands:
-- `[filename]`:      run program `[filename].prg`
-- `type [filename]`: prints filename contents,
-- `rm [filename]`:   remove file,
-- `mk [filename]`:   create an empty file,
-- `ls`:              list files on the disk.
+- `[name]`:                   run program `[name].prg`
+- `type [name]`:              prints file contents,
+- `rm [name]`:                remove file,
+- `mk [name]`:                create an empty file,
+- `mv [old name] [new name]`: rename a file,
+- `ls`:                       list files on the disk.

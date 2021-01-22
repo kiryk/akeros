@@ -950,6 +950,57 @@ fs_remove_file:
 	ret
 
 
+fs_rename_file:
+; IN:  si: original filename pointer
+; IN:  di: new filename pointer
+;
+; OUT: the desired file is renamed
+; OUT: changes are written to the disk
+;
+; VARS:
+	.size equ fs_dir_entry.namesize
+	.tag  equ 0
+
+	pusha
+	sub sp, .size
+	mov bp, sp
+
+	mov bx, si                  ; Save original si
+	mov cx, di                  ; Save original di
+
+	mov si, cx
+	call fs_find_file           ; If the new filename belongs to an
+	jnc short .error            ; existing file, return with error
+
+	mov di, bp
+	call fs_filename_to_tag     ; Translate the filename to tag
+	jc short .error             ; Is the filename correct?
+
+	mov si, bx
+	call fs_find_file
+	jc short .error             ; Does the file we want to rename exist?
+
+	; Now di contains the file's directory entry pointer
+
+	mov cx, fs_dir_entry.namesize
+	mov si, bp
+	rep movsb                   ; Insert the new tag to the file data
+
+	call fs_write_root
+.success:
+	add sp, fs_dir_entry.namesize
+	clc
+
+	jmp short .return
+
+.error:
+	add sp, fs_dir_entry.namesize
+	stc
+.return:
+	popa
+	ret
+
+
 fs_read_file:
 ; IN:  ax:    first physical sector
 ; IN:  es:bx: buffer to load the file to

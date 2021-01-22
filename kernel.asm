@@ -10,27 +10,28 @@
 	jmp fs_close                ; 3*5
 	jmp fs_create_file          ; 3*6
 	jmp fs_remove_file          ; 3*7
-	jmp fs_find_file            ; 3*8
-	jmp string_compare          ; 3*9
-	jmp string_copy             ; 3*10
-	jmp string_parse            ; 3*11
-	jmp string_to_int           ; 3*12
-	jmp string_int_to           ; 3*13
-	jmp string_find_char        ; 3*14
-	jmp string_length           ; 3*15
-	jmp string_reverse          ; 3*16
-	jmp string_char_isbetween   ; 3*17
-	jmp string_char_iswhite     ; 3*18
-	jmp string_char_isdigit     ; 3*19
-	jmp string_char_isalpha     ; 3*20
-	jmp string_char_islower     ; 3*21
-	jmp string_char_isupper     ; 3*22
-	jmp ui_write_char           ; 3*23
-	jmp ui_write_newline        ; 3*24
-	jmp ui_write_lim_string     ; 3*25
-	jmp ui_write_string         ; 3*26
-	jmp ui_write_int            ; 3*27
-	jmp ui_read_string          ; 3*28
+	jmp fs_rename_file          ; 3*8
+	jmp fs_find_file            ; 3*9
+	jmp string_compare          ; 3*10
+	jmp string_copy             ; 3*11
+	jmp string_parse            ; 3*12
+	jmp string_to_int           ; 3*13
+	jmp string_int_to           ; 3*14
+	jmp string_find_char        ; 3*15
+	jmp string_length           ; 3*16
+	jmp string_reverse          ; 3*17
+	jmp string_char_isbetween   ; 3*18
+	jmp string_char_iswhite     ; 3*19
+	jmp string_char_isdigit     ; 3*20
+	jmp string_char_isalpha     ; 3*21
+	jmp string_char_islower     ; 3*22
+	jmp string_char_isupper     ; 3*23
+	jmp ui_write_char           ; 3*24
+	jmp ui_write_newline        ; 3*25
+	jmp ui_write_lim_string     ; 3*26
+	jmp ui_write_string         ; 3*27
+	jmp ui_write_int            ; 3*28
+	jmp ui_read_string          ; 3*29
 
 os_start:
 ; IN: al: device number from bootloader
@@ -85,6 +86,11 @@ readcmd:
 	mov si, ax
 	je readcmd
 
+	mov si, os_cmd_mv
+	call string_compare
+	mov si, ax
+	je cmd_mv
+
 	mov si, os_cmd_ls
 	call string_compare
 	mov si, ax
@@ -118,6 +124,38 @@ readcmd:
 	jmp short readcmd
 
 
+cmd_mv:
+	call string_parse
+	jc short .arg_error
+	mov ax, di
+
+	call string_parse
+	jc short .arg_error
+	mov bx, di
+
+	mov si, ax
+	mov di, bx
+	call fs_rename_file
+	jc short .rename_error
+
+	jmp readcmd
+
+.arg_error:
+	mov si, .arg_msg
+	call ui_write_string
+
+	jmp readcmd
+
+.rename_error:
+	mov si, .rename_msg
+	call ui_write_string
+
+	jmp readcmd
+
+	.arg_msg    db `mv: usage: filename [old name] [new name]\n`, 0
+	.rename_msg db `mv: could not rename the file\n`, 0
+
+
 cmd_ls:
 	call fs_read_root
 
@@ -125,7 +163,7 @@ cmd_ls:
 	mov cx, MaxRootEntries
 .loop:
 	cmp byte [si], 000h
-	je short readcmd
+	je readcmd
 	cmp byte [si], 0E5h
 	je short .skip
 
