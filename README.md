@@ -17,4 +17,5 @@ The shell supports following commands:
 - `rm [name]`:                remove file,
 - `mk [name]`:                create an empty file,
 - `mv [old name] [new name]`: rename a file,
+- `cp [name] [copy name]`:    copy a file,
 - `ls`:                       list files on the disk.
