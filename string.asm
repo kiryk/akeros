@@ -173,7 +173,7 @@ string_int_to:
 	inc di                      ; Make di point to the next byte
 
 	cmp ax, 0                   ; If nothing is left, exit the loop
-	jg short .loop
+	ja short .loop
 
 	mov byte [di], 0            ; End the string with a NUL char
 
@@ -256,7 +256,7 @@ string_reverse:
 
 .loop:
 	cmp si, di
-	jge short .return
+	jae short .return
 
 	mov  byte al, [si]
 	xchg byte [di], al
@@ -284,9 +284,9 @@ string_char_isbetween:
 ; OUT: cf: set if the character is in the range
 
 	cmp al, bl                  ; Is its code smaller than that of bl?
-	jl short .isnot             ; If so, it's not in the range
+	jnae short .isnot           ; If so, it's not in the range
 	cmp al, bh                  ; Is its code greater than that of bh?
-	jg short .isnot             ; If so, it's not in the range
+	ja short .isnot             ; If so, it's not in the range
 
 	stc                         ; If none of the above, it is in the range
 	ret                         ; so set carry and return
