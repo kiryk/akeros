@@ -149,9 +149,9 @@ string_to_int:
 	cmp byte [di], '-'
 	jne short .return           ; If the first char wasn't -, we can return
 
-	mov bx, -1                  ; Otherwise make the number negative
-	mov dx, 0
-	imul bx
+	mov bx, 0                   ; Otherwise make the number negative
+	sub bx, ax
+	mov ax, bx
 
 .return:
 	pop dx
