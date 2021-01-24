@@ -165,13 +165,24 @@ string_to_int:
 string_int_to:
 ; Converts an integer to string.
 ;
-; IN:  ax: unsigned value to be converted
+; IN:  ax: value to be converted
 ; IN:  di: pointer where the result will be stored
 ;
 ; OUT: di: contains a string representing the value in ax
 
 	pusha
 
+	cmp ax, 0                   ; Is the number negative?
+	jge short .nonnegative
+
+	mov byte [di], '-'          ; If it is, add - to di
+	inc di
+
+	mov bx, 0                   ; Then make ax positive, and don't
+	sub bx, ax                  ; mind it anymore
+	mov ax, bx
+
+.nonnegative:
 	mov si, di                  ; Save the original di
 	mov bx, 10                  ; Set bx to decimal base
 .loop:
