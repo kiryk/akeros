@@ -113,41 +113,51 @@ string_to_int:
 ; OUT: ax: its numerical value
 
 	push si
+	push di
 	push bx
 	push cx
 	push dx
 
 	mov ax, 0                   ; We'll build the number starting from 0
 	mov bx, 10                  ; Set bx to the base of decimal system
-	mov dx, 1                   ; Set the sign as positive by default
 
-	cmp byte [si], '-'          ; If the string doesn't begin with '-'
-	jne short .loop             ; jump to the main loop of this routine
+	mov di, si                  ; We'll remember the first char
 
-	mov dx, -1                  ; Otherwise set the dign to negative
-	inc si                      ; and increment si to skip the minus
+	cmp byte [si], '-'
+	jne short .loop
+
+	inc si                      ; Skip the minus
+
 .loop:
 	xchg cx, ax                 ; Save original ax before lodsb
 	lodsb
 	call string_char_isdigit    ; If the character isn't a digit, .return
-	jnc short .return
+	jnc short .done
 
 	xchg ax, cx                 ; Otherwise restore the ax for mul by 10
+	mov dx, 0
 	mul bx
 
+	mov ch, 0
 	sub cl, '0'                 ; Convert the digit char to a number
 	add ax, cx                  ; and add it to the result we've got so far
 
 	jmp short .loop             ; Go for the next character
-.return:
+.done:
 	xchg ax, cx                 ; Restore the ax, so it contained
                                     ; the resulting positive integer
+	cmp byte [di], '-'
+	jne short .return           ; If the first char wasn't -, we can return
 
-	imul dx                     ; Multiply ax by sign
+	mov bx, 0                   ; Otherwise make the number negative
+	sub bx, ax
+	mov ax, bx
 
+.return:
 	pop dx
 	pop cx
 	pop bx
+	pop di
 	pop si
 	ret
 
@@ -155,13 +165,24 @@ string_to_int:
 string_int_to:
 ; Converts an integer to string.
 ;
-; IN:  ax: unsigned value to be converted
+; IN:  ax: value to be converted
 ; IN:  di: pointer where the result will be stored
 ;
 ; OUT: di: contains a string representing the value in ax
 
 	pusha
 
+	cmp ax, 0                   ; Is the number negative?
+	jge short .nonnegative
+
+	mov byte [di], '-'          ; If it is, add - to di
+	inc di
+
+	mov bx, 0                   ; Then make ax positive, and don't
+	sub bx, ax                  ; mind it anymore
+	mov ax, bx
+
+.nonnegative:
 	mov si, di                  ; Save the original di
 	mov bx, 10                  ; Set bx to decimal base
 .loop:
