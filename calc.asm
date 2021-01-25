@@ -127,8 +127,9 @@ calc_prod:
 	call calc_subexp
 	jc short .error
 
-	mov dx, 0
+	cwd
 	idiv bx
+
 	jmp short .done
 
 .try_mod:
@@ -139,7 +140,7 @@ calc_prod:
 	call calc_subexp
 	jc short .error
 
-	mov dx, 0
+	cwd
 	idiv bx
 	mov ax, dx
 	jmp short .done
