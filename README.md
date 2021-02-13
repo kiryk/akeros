@@ -19,3 +19,4 @@ The shell supports following commands:
 - `mv [old name] [new name]`: rename a file,
 - `cp [name] [copy name]`:    copy a file,
 - `ls`:                       list files on the disk.
+- `clear`                     clear screen
