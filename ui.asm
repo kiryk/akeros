@@ -204,6 +204,7 @@ ui_set_box_cursor:
 
 	ret
 
+
 ui_move_cursor:
 ; IN:  al: column
 ; IN:  ah: row
@@ -224,5 +225,30 @@ ui_move_cursor:
 	pop dx
 	pop bx
 	pop ax
+
+	ret
+
+
+ui_clear_screen:
+; IN:  N/A
+; OUT: the screen is cleared
+
+	pusha
+
+	mov al, 0
+	mov ah, 07h
+	mov bh, 07h
+	mov bl, 00h
+	mov ch, 0
+	mov cl, 0
+	mov dh, 24
+	mov dl, 79
+	int 10h
+
+	mov al, 0
+	mov ah, 0
+	call ui_move_cursor
+
+	popa
 
 	ret
