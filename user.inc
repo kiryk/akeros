@@ -27,3 +27,7 @@
 	ui_write_string       equ 3*27
 	ui_write_int          equ 3*28
 	ui_read_string        equ 3*29
+	ui_hide_cursor        equ 3*30
+	ui_set_std_cursor     equ 3*31
+	ui_set_box_cursor     equ 3*32
+	ui_move_cursor        equ 3*33

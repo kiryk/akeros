@@ -2,36 +2,40 @@
 
 	jmp os_start
 
-	; system call name          ; index
-	jmp fs_open_read            ; 3*1
-	jmp fs_open_write           ; 3*2
-	jmp fs_read                 ; 3*3
-	jmp fs_write                ; 3*4
-	jmp fs_close                ; 3*5
-	jmp fs_create_file          ; 3*6
-	jmp fs_remove_file          ; 3*7
-	jmp fs_rename_file          ; 3*8
-	jmp fs_find_file            ; 3*9
-	jmp string_compare          ; 3*10
-	jmp string_copy             ; 3*11
-	jmp string_parse            ; 3*12
-	jmp string_to_int           ; 3*13
-	jmp string_int_to           ; 3*14
-	jmp string_find_char        ; 3*15
-	jmp string_length           ; 3*16
-	jmp string_reverse          ; 3*17
-	jmp string_char_isbetween   ; 3*18
-	jmp string_char_iswhite     ; 3*19
-	jmp string_char_isdigit     ; 3*20
-	jmp string_char_isalpha     ; 3*21
-	jmp string_char_islower     ; 3*22
-	jmp string_char_isupper     ; 3*23
-	jmp ui_write_char           ; 3*24
-	jmp ui_write_newline        ; 3*25
-	jmp ui_write_lim_string     ; 3*26
-	jmp ui_write_string         ; 3*27
-	jmp ui_write_int            ; 3*28
-	jmp ui_read_string          ; 3*29
+	; system call name        ; index
+	jmp fs_open_read          ; 3*1
+	jmp fs_open_write         ; 3*2
+	jmp fs_read               ; 3*3
+	jmp fs_write              ; 3*4
+	jmp fs_close              ; 3*5
+	jmp fs_create_file        ; 3*6
+	jmp fs_remove_file        ; 3*7
+	jmp fs_rename_file        ; 3*8
+	jmp fs_find_file          ; 3*9
+	jmp string_compare        ; 3*10
+	jmp string_copy           ; 3*11
+	jmp string_parse          ; 3*12
+	jmp string_to_int         ; 3*13
+	jmp string_int_to         ; 3*14
+	jmp string_find_char      ; 3*15
+	jmp string_length         ; 3*16
+	jmp string_reverse        ; 3*17
+	jmp string_char_isbetween ; 3*18
+	jmp string_char_iswhite   ; 3*19
+	jmp string_char_isdigit   ; 3*20
+	jmp string_char_isalpha   ; 3*21
+	jmp string_char_islower   ; 3*22
+	jmp string_char_isupper   ; 3*23
+	jmp ui_write_char         ; 3*24
+	jmp ui_write_newline      ; 3*25
+	jmp ui_write_lim_string   ; 3*26
+	jmp ui_write_string       ; 3*27
+	jmp ui_write_int          ; 3*28
+	jmp ui_read_string        ; 3*29
+	jmp ui_hide_cursor        ; 3*30
+	jmp ui_set_std_cursor     ; 3*31
+	jmp ui_set_box_cursor     ; 3*32
+	jmp ui_move_cursor        ; 3*33
 
 os_start:
 ; IN: al: device number from bootloader
@@ -403,32 +407,11 @@ cmd_rm:
 
 
 cmd_test:
-	call string_parse
-	jc .no_argument_error
-
-	mov si, .filename
-	call fs_open_write
-
-	mov cx, ax
-
-	mov si, di
-	call string_length
-	xchg cx, ax
-
-	call fs_write
-	call fs_close
+	mov al, 12
+	mov ah, 5
+	call ui_move_cursor
 
 	jmp readcmd
-
-.no_argument_error:
-	mov si, .no_argument
-	call ui_write_string
-
-	jmp readcmd
-
-	.no_argument db `test: usage: test filename\n`, 0
-	.filename    db `test.log`, 0
-
 
 os_fatal_error:
 	mov si, .error
