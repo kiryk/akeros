@@ -150,3 +150,56 @@ ui_read_string:
 	pop ax
 
 	ret
+
+
+ui_hide_cursor:
+; IN:  N/A
+; OUT: the cursor is invisible
+
+	push ax
+	push bx
+
+	mov ah, 1
+	mov ch, 32
+	int 10h
+
+	pop bx
+	pop ax
+
+	ret
+
+
+ui_set_standard_cursor:
+; IN:  N/A
+; OUT: the cursor is in the standard underscore form
+
+	push ax
+	push bx
+
+	mov ah, 1
+	mov ch, 6
+	mov cl, 7
+	int 10h
+
+	pop bx
+	pop ax
+
+	ret
+
+
+ui_set_box_cursor:
+; IN: N/A
+; OUT: the cursor is in the box-shaped form
+
+	push ax
+	push bx
+
+	mov ah, 1
+	mov ch, 0
+	mov cl, 7
+	int 10h
+
+	pop bx
+	pop ax
+
+	ret

@@ -32,6 +32,9 @@
 	jmp ui_write_string         ; 3*27
 	jmp ui_write_int            ; 3*28
 	jmp ui_read_string          ; 3*29
+	jmp ui_hide_cursor          ; 3*30
+	jmp ui_set_standard_cursor  ; 3*31
+	jmp ui_set_box_cursor       ; 3*32
 
 os_start:
 ; IN: al: device number from bootloader
