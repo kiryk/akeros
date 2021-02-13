@@ -111,10 +111,10 @@ readcmd:
 	mov si, ax
 	je cmd_type
 
-	mov si, os_cmd_test
+	mov si, os_cmd_clear
 	call string_compare
 	mov si, ax
-	je cmd_test
+	je cmd_clear
 
 	mov si, os_cmd_mk
 	call string_compare
@@ -407,10 +407,11 @@ cmd_rm:
 	.no_argument db `mk: usage: mk filename\n`, 0
 
 
-cmd_test:
+cmd_clear:
 	call ui_clear_screen
 
 	jmp readcmd
+
 
 os_fatal_error:
 	mov si, .error
@@ -438,7 +439,7 @@ os_fatal_error:
 	os_cmd_mv      db "mv", 0
 	os_cmd_rm      db "rm", 0
 	os_cmd_run     db "run", 0
-	os_cmd_test    db "test", 0
+	os_cmd_clear    db "clear", 0
 	os_cmd_type    db "type", 0
 
 	os_kernel_size db `Kernel size:  `, 0

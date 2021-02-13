@@ -13,9 +13,10 @@ The test.bat script uses:
 
 The shell supports following commands:
 - `[name]`:                   run program `[name].prg`
-- `type [name]`:              prints file contents,
-- `rm [name]`:                remove file,
-- `mk [name]`:                create an empty file,
-- `mv [old name] [new name]`: rename a file,
+- `clear`                     clear screen
 - `cp [name] [copy name]`:    copy a file,
 - `ls`:                       list files on the disk.
+- `mk [name]`:                create an empty file,
+- `mv [old name] [new name]`: rename a file,
+- `rm [name]`:                remove file,
+- `type [name]`:              prints file contents,
