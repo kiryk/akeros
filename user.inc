@@ -31,3 +31,4 @@
 	ui_set_std_cursor     equ 3*31
 	ui_set_box_cursor     equ 3*32
 	ui_move_cursor        equ 3*33
+	ui_clear_screen       equ 3*34

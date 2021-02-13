@@ -36,6 +36,7 @@
 	jmp ui_set_std_cursor     ; 3*31
 	jmp ui_set_box_cursor     ; 3*32
 	jmp ui_move_cursor        ; 3*33
+	jmp ui_clear_screen       ; 3*34
 
 os_start:
 ; IN: al: device number from bootloader
@@ -407,9 +408,7 @@ cmd_rm:
 
 
 cmd_test:
-	mov al, 12
-	mov ah, 5
-	call ui_move_cursor
+	call ui_clear_screen
 
 	jmp readcmd
 
