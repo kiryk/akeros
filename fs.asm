@@ -53,13 +53,25 @@ fs_buffer:
 	.dirent equ BytesPerSector + 6
 	.mode   equ BytesPerSector + 8
 
-fs_buffer_index:
-%rep MaxOpenFiles
-  times fs_buffer.size db 0
-%endrep
-
 
 ; CODE SECTION:
+fs_init_buffers:
+	push ax
+	push cx
+	push si
+
+	mov ax, 0
+	mov cx, MaxOpenFiles*fs_buffer.size
+	mov di, fs_buffer_index
+	rep stosb
+
+	pop si
+	pop cx
+	pop ax
+
+	ret
+
+
 fs_read_root:
 ; OUT: root buffer loaded from the disk and ready
 ;          to work with
