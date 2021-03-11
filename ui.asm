@@ -5,15 +5,15 @@ ui_write_char:
 
 	mov ah, 0Eh
 
-	cmp al, 10 ; '\n'
+	cmp al, `\n`
 	je short .newline
 
 	int 10h
 	jmp short .return
 .newline:
-	mov al, 13
+	mov al, `\r`
 	int 10h
-	mov al, 10
+	mov al, `\n`
 	int 10h
 .return:
 	pop ax
