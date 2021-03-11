@@ -60,7 +60,7 @@ os_start:
 init:
 	call fs_read_fat
 	call fs_read_root
-
+	call fs_init_buffers
 welcome:
 	mov si, os_kernel_size
 	call ui_write_string
@@ -454,6 +454,7 @@ os_fatal_error:
 ; (must be included as last)
 ; INCLUDE "mem.asm"
 
-fat_buffer:
+fs_buffer_index:
+fat_buffer  equ fs_buffer_index+MaxOpenFiles*fs_buffer.size
 root_buffer equ fat_buffer+9*512 ; (size of FAT in the buffer)
 kernel_end  equ root_buffer+14*512
