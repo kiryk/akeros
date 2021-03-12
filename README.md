@@ -12,13 +12,14 @@ So far the kernel uses a flat FAT12 file system and has a built-in command inter
 
 ## Compilation and running
 
-The build.bat script uses:
+The _build.bat_ script uses:
 - NASM to compile the sources,
 - ImDisk to save binaries on a floppy image.
 
-The test.bat script uses:
+The _test.bat_ script uses:
 - QEMU (`qemu-system-i386`) as an emulator for the OS.
 
+Both scripts should just work and can be used without any arguments.
 
 ## Using the shell
 
@@ -249,3 +250,5 @@ main:
 
 	.string db `hello, world\n`, 0
 ```
+
+To compile a program and add it to the floppy image, please lookup the way it is done with _calc.asm_ in the script _build.bat_.
