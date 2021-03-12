@@ -115,7 +115,7 @@ The user should be aware that if they won't close a file, its buffer contents wo
 
 ## Coding conventions
 
-At the moment this document was begin written, `ui_write_int` was the most representative kernel function, i.e. it contains almost all of the most characteristic coding conventions used in the kernel. It is also short, so it will be presented here as an example to be referred to.
+At the moment this document was begin written, `ui_write_int` was the most representative kernel routine, i.e. it contains almost all of the most characteristic coding conventions used in the kernel. It is also short, so it will be presented here as an example to be referred to.
 
 ```
 ui_write_int:
@@ -163,35 +163,33 @@ The general description is only required when the behavior can't be easily deduc
 
 Both assumed circumstances and side effect can be omitted in case there are none. Especially the assumptions don't need to be mentioned if they're a part of proper functioning of the OS (like the FAT buffer containing up-to-date information).
 
-Regular comments should be placed between instructions or next to a instruction.
-
-In the first case the comments usually describe the stage of the computation at the point in which the comment is left. Such comments are indented at the same level the code surrounding them is.
+Regular comments should be placed between instructions or next to a instruction. In the first case the comments usually describe the stage of the computation at the point in which the comment is left. Such comments are indented at the same level as the code surrounding them.
 
 Comments placed next to instructions describe specific steps, they're placed after 29th character in the line (assuming 2 char wide tabs). They begin with an uppercase letter, unless they're a continuation of a previous comment.
 
 ### Routines
 
-If the routine uses branching instructions, the `.return` label is often used to mark the place where variables are deallocated and original registers are restored, but if the function has a different return procedure on fail, the labels `.error` or `.success` can also be used.
-
 Generally all labels are preceded by blank lines, but this rule can be ignored if the programmer wants to make it clear the code under the label can be entered directly (not just by jumps), which is handy in some cases.
 
-Routines should not change any of the values not mentioned in their side effect, but they're not expected to save any of the flag bits. They quite often set carry flag to communicate an error or a positive effect of a logical test (like in `string_char_isdigit`). The zero flag is often modified by functions testing some structures for equality.
+If the routine uses branching instructions, the `.return` label is often used to mark the place where variables are deallocated and original registers are restored, but if the routine has a different return procedure on failure, the labels `.error` or `.success` can also be used.
 
-Local variables can only kept in registers and stack allocated areas. Keeping variable values under labels pointing to a reserved hard-coded space is not accepted, but the exceptions are:
+Routines should not change any of the values not mentioned in their side effect, but they're never expected to save any of the flag bits. They quite often set carry flag to communicate an error or a positive effect of a logical test (like in `string_char_isdigit`). The zero flag is often modified by routines testing some structures for equality.
+
+Local variables can only be kept in registers and stack allocated areas. Keeping variable values under labels pointing to a reserved hard-coded space is not accepted, but the exceptions are:
 
 1. Main kernel routine
 2. External (especially small) programs
 
 The restriction does not apply if the value is constant, like a version number, or an error message.
 
-To allocate variables on the stack, first calculate an offset of each variable, and declare them as local constants in the routine, just like in `ui_write_int` routine shown above. You're also expected to add a `.size` constant expressing the total size of all local variables, like here:
+To allocate variables on the stack, first calculate an offset of each variable, and declare them as local constants in the routine, just like in the `ui_write_int` routine shown above. You're also expected to add a `.size` constant expressing the total size of all local variables, like here:
 
 ```
 	.size   equ 7
 	.string equ 0
 ```
 
-To actually allocate the variables, first push all the registers you have to on the stack, then subtract `.size` from the stack pointer (`sp`), and save the new pointer in the base pointer register (`bp`):
+To actually allocate the variables, first push on the stack all the registers that require it, then subtract `.size` from the stack pointer (`sp`) and save its value in the base pointer register (`bp`):
 
 ```
 	sub sp, .size
@@ -215,9 +213,9 @@ bintree:
 	.right equ 4
 ```
 
-Where `.value`, `.left` and `.right` are field offsets in bytes, and `.size` is a constant describing the size of the structure.
+Where `.value`, `.left` and `.right` are field offsets expressed in bytes, and `.size` is a constant describing the size of the whole structure.
 
-Assuming the structure is pointed by the `bx` register, its fields can be accessed in following manner:
+Assuming the structure is pointed by the `bx` register, its fields can be accessed in the following manner:
 
 ```
 	mov bx, [bx+bintree.left]   ; Search in the left child
