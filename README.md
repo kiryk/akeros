@@ -55,7 +55,7 @@ The shell supports following commands:
 
 ### Booting routine
 
-After the kernel binary is loaded to the memory, it sets all memory segments to the page number 0x2000, the only exception being the stack and its segment, which occupy the lower parts of the memory.
+After the kernel binary is loaded to the memory, it sets all memory segments to the page number 0x2000, the only exception being the stack and its segment, which occupy lower parts of the memory.
 
 When the above procedure is finished, the kernel initializes all of its 3 main buffers:
 
@@ -65,18 +65,18 @@ When the above procedure is finished, the kernel initializes all of its 3 main b
 
 The first two are loaded from the disk, the latter one is initialized by zeroing.
 
-After these, the kernel clears the screen, displays a welcome message and proceeds to reading user commands.
+After that, the kernel clears the screen, displays a welcome message and starts waiting for user commands.
 
 ### Memory map
 
-As the kernel uses just one memory segment, it can only operate 64kBs of memory, which is further split into two parts:
+As the kernel uses just one memory segment, it can only use 64kBs of memory, which is further split into two parts:
 
 1. The first 20 480 bytes (0Fh-4FFFh) are reserved and used only by the kernel and its buffers.
 2. The other 45 056 bytes (5000h-10000h) are left for external programs.
 
-Every program is loaded at the memory address 5000h, and its internal references are expected to be adjusted to that address.
+Every program, when it is run, is loaded at the memory address 5000h, and its internal references are expected to be adjusted to that address.
 
-At this point, the size of the kernel got very close to 20 480 bytes, so the above numbers can be expected to change soon.
+At this point, the size of the kernel got very close to 20 480 bytes, so the above numbers are expected to change soon.
 
 ### Handling system calls
 
@@ -99,7 +99,17 @@ jmp os_start              ; Jump over the system call jumps
 ...
 ```
 
-The external programs don't know where specific kernel routines are placed, whatsmore the position of these routines may change as the kernel is developed. So instead the jump instructions to the most important routines are grouped together in a place where they're unlikely to ever be replaced. The user library (_user.inc_) contains addresses of these jumps, so the kernel services can be called just like any other routines.
+External programs don't know where specific kernel routines are placed, furthermore the position of these routines may change as the kernel is developed. To help this, jump instructions to the most important routines are grouped together at the beginning of the kernel code, the routines can be accessed by calling addresses of these jumps with the regular CALL instruction. The user library (_user.inc_) assigns readable names to these addresses:
+
+```
+	fs_open_read          equ 3*1
+	fs_open_write         equ 3*2
+	fs_read               equ 3*3
+	fs_write              equ 3*4
+	fs_close              equ 3*5
+
+	...
+```
 
 ### Working with files
 
@@ -107,15 +117,15 @@ The kernel provides services for creating, renaming and removing files, but its 
 
 There are two separate system calls for opening file in read and write mode, both return a file descriptor number in UNIX-like manner.
 
-Opening a nonexistent file in write mode creates it, but if the file existed before, its contents _are not_ erased and new bytes are being appended. Whenever this behavior is not desired, the file should be deleted before opening.
+Opening a nonexistent file in write mode creates it, but if the file existed before, its contents _are not_ erased and new data is appended. When such behavior is not desired, the file should be deleted before opening.
 
-Every open file obtains an entry in _the file buffer_, which contains a pointer to its directory entry, information on the mode in which the file is open, and most importantly a 512 bytes big buffer which contents are written to the disk only when the buffer gets full. If the file is open in read mode, the buffer always contains a block of 512 bytes read from the file, including the bytes not yet explicitly read by the user.
+Every open file obtains an entry in _the file buffer_, which contains a pointer to its directory entry, information on the mode in which the file is open, and most importantly a 512 bytes big buffer which contents are written to the disk only when the buffer gets full or if the file is open in read mode, the buffer always contains a block of 512 bytes loaded from the file, including the bytes not yet explicitly read by the user.
 
-The user should be aware that if they won't close a file, its buffer contents won't be written on the disk and thus some data may be lost.
+The user should be aware that if they won't close a file opened in write mode, its buffer contents won't be written on the disk and thus some data may be lost.
 
 ## Coding conventions
 
-At the moment this document was begin written, `ui_write_int` was the most representative kernel routine, i.e. it contains almost all of the most characteristic coding conventions used in the kernel. It is also short, so it will be presented here as an example to be referred to.
+At the moment this document is written, `ui_write_int` is the most representative kernel routine, i.e. it contains almost all of the most characteristic coding conventions used in the kernel. It is also short, so it will be presented here as an example to be referred to.
 
 ```
 ui_write_int:
@@ -175,7 +185,7 @@ If the routine uses branching instructions, the `.return` label is often used to
 
 Routines should not change any of the values not mentioned in their side effect, but they're never expected to save any of the flag bits. They quite often set carry flag to communicate an error or a positive effect of a logical test (like in `string_char_isdigit`). The zero flag is often modified by routines testing some structures for equality.
 
-Local variables can only be kept in registers and stack allocated areas. Keeping variable values under labels pointing to a reserved hard-coded space is not accepted, but the exceptions are:
+Local variables can only be kept in registers and stack allocated areas. Keeping variable values in a reserved hard-coded space is not accepted, but the exceptions are:
 
 1. Main kernel routine
 2. External (especially small) programs
@@ -202,7 +212,7 @@ If you want to use the flag to communicate a success or a failure, both the deal
 
 ### Data structures
 
-Labels and local labels are abused in order to create data structures. They're described similarly to stack variables in routines, for instance:
+Labels and local labels are abused in order to create data structures. They're defined similarly to stack variables in routines, for instance:
 
 ```
 bintree:
@@ -223,7 +233,7 @@ Assuming the structure is pointed by the `bx` register, its fields can be access
 
 ### Writing an external program
 
-Every userspace program should start with the 3 directives shown below, then the user can feel free writing a regular assembly program using system calls referred by the _user.inc_ file.
+Every userspace program should start with the 3 directives shown below, after them the user can feel free to write a regular assembly program using system calls referred by the _user.inc_ file.
 
 ```
 bits 16
@@ -249,4 +259,4 @@ main:
 	.string db `hello, world\n`, 0
 ```
 
-To compile a program and add it to the floppy image, please lookup the way it is done with _calc.asm_ in the script _build.bat_.
+To compile a program and add it to a floppy image, please lookup the way it is done with _calc.asm_ in the script _build.bat_.
