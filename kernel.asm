@@ -15,30 +15,31 @@
 	jmp fs_rename_file        ; 3*8
 	jmp fs_find_file          ; 3*9
 	jmp string_compare        ; 3*10
-	jmp string_copy           ; 3*11
-	jmp string_parse          ; 3*12
-	jmp string_to_int         ; 3*13
-	jmp string_int_to         ; 3*14
-	jmp string_find_char      ; 3*15
-	jmp string_length         ; 3*16
-	jmp string_reverse        ; 3*17
-	jmp string_char_isbetween ; 3*18
-	jmp string_char_iswhite   ; 3*19
-	jmp string_char_isdigit   ; 3*20
-	jmp string_char_isalpha   ; 3*21
-	jmp string_char_islower   ; 3*22
-	jmp string_char_isupper   ; 3*23
-	jmp ui_write_char         ; 3*24
-	jmp ui_write_newline      ; 3*25
-	jmp ui_write_lim_string   ; 3*26
-	jmp ui_write_string       ; 3*27
-	jmp ui_write_int          ; 3*28
-	jmp ui_read_string        ; 3*29
-	jmp ui_hide_cursor        ; 3*30
-	jmp ui_set_std_cursor     ; 3*31
-	jmp ui_set_box_cursor     ; 3*32
-	jmp ui_move_cursor        ; 3*33
-	jmp ui_clear_screen       ; 3*34
+	jmp string_difference     ; 3*11
+	jmp string_copy           ; 3*12
+	jmp string_parse          ; 3*13
+	jmp string_to_int         ; 3*14
+	jmp string_int_to         ; 3*15
+	jmp string_find_char      ; 3*16
+	jmp string_length         ; 3*17
+	jmp string_reverse        ; 3*18
+	jmp string_char_isbetween ; 3*19
+	jmp string_char_iswhite   ; 3*20
+	jmp string_char_isdigit   ; 3*21
+	jmp string_char_isalpha   ; 3*22
+	jmp string_char_islower   ; 3*23
+	jmp string_char_isupper   ; 3*24
+	jmp ui_write_char         ; 3*25
+	jmp ui_write_newline      ; 3*26
+	jmp ui_write_lim_string   ; 3*27
+	jmp ui_write_string       ; 3*28
+	jmp ui_write_int          ; 3*29
+	jmp ui_read_string        ; 3*30
+	jmp ui_hide_cursor        ; 3*31
+	jmp ui_set_std_cursor     ; 3*32
+	jmp ui_set_box_cursor     ; 3*33
+	jmp ui_move_cursor        ; 3*34
+	jmp ui_clear_screen       ; 3*35
 
 os_start:
 ; IN: al: device number from bootloader
