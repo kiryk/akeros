@@ -111,6 +111,17 @@ ui_write_int:
 	ret
 
 
+ui_read_char:
+; IN:  N/A
+; OUT: al: ASCII charater code
+; OUT: ah: scan code
+
+	mov ah, 10h
+	int 16h
+
+	ret
+
+
 ui_read_string:
 ; IN:  di: input buffer pointer
 ; OUT: modified buffer
