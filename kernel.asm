@@ -34,12 +34,14 @@
 	jmp ui_write_lim_string   ; 3*27
 	jmp ui_write_string       ; 3*28
 	jmp ui_write_int          ; 3*29
-	jmp ui_read_string        ; 3*30
-	jmp ui_hide_cursor        ; 3*31
-	jmp ui_set_std_cursor     ; 3*32
-	jmp ui_set_box_cursor     ; 3*33
-	jmp ui_move_cursor        ; 3*34
-	jmp ui_clear_screen       ; 3*35
+	jmp ui_read_char          ; 3*30
+	jmp ui_read_string        ; 3*31
+	jmp ui_hide_cursor        ; 3*32
+	jmp ui_set_std_cursor     ; 3*33
+	jmp ui_set_box_cursor     ; 3*34
+	jmp ui_move_cursor        ; 3*35
+	jmp ui_find_cursor        ; 3*36
+	jmp ui_clear_screen       ; 3*37
 
 os_start:
 ; IN: al: device number from bootloader
