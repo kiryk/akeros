@@ -240,6 +240,27 @@ ui_move_cursor:
 	ret
 
 
+ui_find_cursor:
+; IN:  N/A
+; OUT: al: column
+; OUT: ah: row
+
+	push bx
+	push cx
+	push dx
+
+	mov ah, 03h
+	mov bh, 0
+	int 0h
+
+	mov ax, dx
+
+	pop dx
+	pop cx
+	pop bx
+	ret
+
+
 ui_clear_screen:
 ; IN:  N/A
 ; OUT: the screen is cleared
