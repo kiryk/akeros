@@ -9,20 +9,49 @@ string_compare:
 	push di
 	push ax
 
+	call string_difference
+	cmp ax, 0
+
+	pop ax
+	pop di
+	pop si
+	ret
+
+
+string_difference:
+; Difference between ASCII codes of the first pair of different
+; characters on corresponding positions in the given strings.
+;
+; IN:  si, di: strings to be compared
+;
+; OUT: ax: a negative value if the char in si has a lower ASCII code
+;          than that in di, a positive value if the code is higher,
+;          zero if both strings are identical.
+
+	push bx
+	push si
+	push di
+
 .loop:
-	mov al, [di]                ; Compare the values that are currently
-	cmp [si], al                ; under [si] and [di]
+	mov al, [si]                ; Compare the values that are currently
+	cmp [di], al                ; under [si] and [di]
 
 	jne short .return           ; If a difference was found, go to .return
 
-	cmp byte [si], 0            ; If [si] is terminated here, go to .return
+	cmp byte al, 0              ; If [si] is terminated here, go to .return
 	je short .return
 
 	inc si                      ; Increment both pointers and loop
 	inc di
 	jmp short .loop
 .return:
-	pop ax
+	mov bh, 0
+	mov bl, [di]
+
+	mov ah, 0
+	sub ax, bx
+
+	pop bx
 	pop di
 	pop si
 	ret
