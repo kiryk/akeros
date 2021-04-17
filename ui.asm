@@ -40,8 +40,6 @@ ui_write_lim_string:
 ; IN:  si: output string
 ; IN:  cx: output string length
 ; OUT: the first cx characters of si are printed on the screen
-;
-; Note that there is no end of string check except the limit in cx
 
 	push si
 	push ax
@@ -52,6 +50,10 @@ ui_write_lim_string:
 	je short .return            ; If so, return
 
 	lodsb                       ; Move [si] to al, then increment si
+
+	cmp al, 0
+	je short .return            ; Return if its the end of the string
+
 	call ui_write_char          ; Print the character in al
 
 	dec cx                      ; Decrement cx, since a character was printed
