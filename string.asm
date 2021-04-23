@@ -51,9 +51,9 @@ string_difference:
 	mov ah, 0
 	sub ax, bx
 
-	pop bx
 	pop di
 	pop si
+	pop bx
 	ret
 
 
