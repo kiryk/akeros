@@ -255,12 +255,10 @@ cmd_cp:
 
 cmd_ls:
 	mov si, root_buffer         ; Start browsing the root firectory
-	mov cx, MaxRootEntries
+	mov cx, 0
 .loop:
-	cmp byte [si], 000h         ; Is it the last entry in the dir?
-	je readcmd                  ; If so, return to the main routine
-	cmp byte [si], 0E5h         ; Is it empty but not last?
-	je short .skip              ; If so, skip it
+	call fs_skip_special        ; Skip special directory entries
+	jc readcmd                  ; Or return if no more is left
 
 	mov di, .filename           ; But if it isn't empty, convert
 	call fs_tag_to_filename     ; file's tag to its user-friendly name
@@ -270,11 +268,10 @@ cmd_ls:
 	xchg si, di                 ; Get the original si back
 
 	call ui_write_newline       ; Print a newline after the end of each name
-.skip:
-	call fs_next_file           ; Increment si by the size of a directory entry
 
-	loop .loop                  ; If any files are left, repeat
-	jmp readcmd                 ; Otherwise ask for a next command
+	add si, fs_dir_entry.size
+	inc cx
+	jmp .loop
 
 	.filename times 13 db 0
 

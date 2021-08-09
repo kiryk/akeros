@@ -1038,18 +1038,41 @@ fs_read_file:
 	ret
 
 
-fs_next_file:
+fs_skip_special:
+; Increment directory pointer to the next entry,
+; if the current is a special or an empty one.
+;
 ; IN:      root directory in buffer
+; IN:  cx: current directory entity number (zero-based)
 ; IN:  si: current directory entity pointer
 ;
+; OUT: cx: next directory entity pointer
 ; OUT: si: next directory entity pointer
+; OUT: cf: set if no next dir
 
-	; It just increments dir entity pointer by dir entry size
-	; just to simplify walking through directory.
-	; Might be removed soon
+.loop:
+	cmp cx, MaxRootEntries
+	jae short .error
+	cmp byte [si], 000h
+	je short .error
+	cmp byte [si+11], 00Fh
+	je short .skip
+	cmp byte [si], 0E5h
+	je short .skip
 
+	clc
+	jmp short .return
+
+.skip:
+	inc cx
 	add si, fs_dir_entry.size
 
+	jmp short .loop
+
+.error:
+	stc
+
+.return:
 	ret
 
 
@@ -1076,23 +1099,20 @@ fs_find_file:
 	call fs_filename_to_tag     ; Save the filename's tag form in .tag
 	jc short .notfound
 
-	mov si, bp                  ; Make si point to .tag
+	; Now we're going to browse all the files
 
-	; No we're going to browse all the files
-
-	mov cx, [MaxRootEntries]
+	mov cx, 0
 	mov ax, root_buffer
 
 .loop:
-	mov di, ax                  ; Save the entry pointer in di
-
-	cmp byte [di], 0            ; If the last entry, we found nothing
-	je short .notfound
-
-	cmp byte [di], 0E5h         ; If its 0E5h, it's empty, but we continue
-	je short .continue
+	mov si, ax
+	call fs_skip_special        ; Skip special directory entries
+	jc short .notfound          ; Or give up if none are left
 
 	; TODO: implement a strncmp-like routine and use it instead
+
+	mov si, bp                  ; Make si point to our .tag
+	mov di, ax                  ; Make di point to name in the entry
 
 	mov dx, cx
 	mov cx, fs_dir_entry.namesize
@@ -1100,10 +1120,12 @@ fs_find_file:
 	je short .found             ; If they're the same, we found the file
 	mov si, bp
 	mov cx, dx
+
 .continue:
 
 	add ax, fs_dir_entry.size   ; Go for the next entry
-	loop .loop                  ; Repeat the loop if there are entires left
+	inc cx
+	jmp .loop
 
 .notfound:
 	add sp, .size               ; Dealloc variables
