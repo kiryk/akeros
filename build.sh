@@ -10,10 +10,12 @@ dd if=bootloader.sys of=dev.img conv=notrunc
 
 mkdir akeros
 mount -o loop dev.img akeros
+sleep 0.5
 
 cp kernel.sys akeros/
 cp README.md akeros/
 cp *.prg akeros/
+sleep 0.5
 
 umount akeros
 rm -r akeros
