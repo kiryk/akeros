@@ -3,6 +3,7 @@
 nasm -O0 -f bin -o bootloader.sys bootloader.asm
 nasm -O0 -f bin -o kernel.sys kernel.asm
 nasm -O0 -f bin -o calc.prg calc.asm
+nasm -O0 -f bin -o edit.prg edit.asm
 
 rm dev.img
 dd if=/dev/zero bs=512 count=2880 > dev.img
@@ -19,4 +20,3 @@ sleep 0.5
 
 umount akeros
 rm -r akeros
-
