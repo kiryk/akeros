@@ -12,14 +12,20 @@ So far the kernel uses a flat FAT12 file system and has a built-in command inter
 
 ## Compilation and running
 
-The _build.bat_ script uses:
-- NASM to compile the sources,
-- ImDisk to save binaries on a floppy image.
+To create a disk image:
+```
+make
+sudo make install
+```
 
-The _test.bat_ script uses:
-- QEMU (`qemu-system-i386`) as an emulator for the OS.
+To run it:
+```
+make test
+```
 
-Both scripts should just work and can be used without any arguments.
+The `nasm` compiler is required for installation and `qemu-system-i386` for testing.
+
+`make install` requires root permission level to mount the disk image and copy OS files onto it.
 
 ## Using the shell
 
